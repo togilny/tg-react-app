@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug node process",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "program": "C:\\Users\\tonyg\\Desktop\\tg.react.app\\src\\Web\\tg-react-app.web\\tg-react-app.web.njsproj",
+      "stopOnEntry": false,
+      "skipFiles": [
+        "<node_internals/**"
+      ],
+      "console": "externalTerminal"
+    }
+  ],
+  "compounds": []
+}

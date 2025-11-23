@@ -1,0 +1,6 @@
+@TgReactApp.Api_HostAddress = http://localhost:5171
+
+GET {{TgReactApp.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
