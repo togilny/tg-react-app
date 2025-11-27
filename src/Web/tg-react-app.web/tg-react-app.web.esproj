@@ -5,9 +5,10 @@
     <!--Command to run on project clean-->
     <CleanCommand>npm run clean</CleanCommand>
     <PackageJsonDirectory>$(MSBuildProjectDirectory)</PackageJsonDirectory>
-    <StartupCommand>run dev</StartupCommand>
+    <StartupCommand>npm run dev</StartupCommand>
     <StartupCommandWorkingDirectory>$(MSBuildProjectDirectory)</StartupCommandWorkingDirectory>
     <RestoreProjectStyle>None</RestoreProjectStyle>
     <DisableImplicitNuGetRestore>true</DisableImplicitNuGetRestore>
+    <ResolveNuGetPackages>false</ResolveNuGetPackages>
   </PropertyGroup>
 </Project>
