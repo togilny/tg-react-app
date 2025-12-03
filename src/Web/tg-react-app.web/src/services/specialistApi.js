@@ -1,5 +1,7 @@
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
 
+const getToken = () => localStorage.getItem('authToken');
+
 const toJson = async (response) => {
   if (response.status === 204) {
     return null;
@@ -9,10 +11,9 @@ const toJson = async (response) => {
   return text ? JSON.parse(text) : null;
 };
 
-const getToken = () => localStorage.getItem('authToken');
-
 const request = async (path, options = {}) => {
   const token = getToken();
+  
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
       'Content-Type': 'application/json',
@@ -31,23 +32,29 @@ const request = async (path, options = {}) => {
   return toJson(response);
 };
 
-export const login = (username, password) =>
-  request('/api/auth/login', {
+export const fetchSpecialists = (category = null) => {
+  const query = category ? `?category=${encodeURIComponent(category)}` : '';
+  return request(`/api/specialists${query}`);
+};
+
+export const fetchSpecialistById = (id) => request(`/api/specialists/${id}`);
+
+export const fetchMyProfile = () => request('/api/specialists/my-profile');
+
+export const createSpecialist = (payload) =>
+  request('/api/specialists', {
     method: 'POST',
-    body: JSON.stringify({ username, password })
+    body: JSON.stringify(payload)
   });
 
-export const register = (username, password, displayName = null, specialistCode = null) =>
-  request('/api/auth/register', {
-    method: 'POST',
-    body: JSON.stringify({ username, password, displayName, specialistCode })
-  });
-
-export const fetchMyProfile = () => request('/api/users/me');
-
-export const updateMyProfile = (updates) =>
-  request('/api/users/me', {
+export const updateSpecialist = (id, payload) =>
+  request(`/api/specialists/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(updates)
+    body: JSON.stringify(payload)
+  });
+
+export const deleteSpecialist = (id) =>
+  request(`/api/specialists/${id}`, {
+    method: 'DELETE'
   });
 

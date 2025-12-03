@@ -1,9 +1,10 @@
 import { useState } from 'react';
 
-export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSpecialist, error }) {
+export default function SpecialistRegisterForm({ onRegister, onSwitchToLogin, onSwitchToRegular, error }) {
   const [username, setUsername] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [specialistCode, setSpecialistCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -13,7 +14,7 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
     e.preventDefault();
     setValidationError('');
 
-    if (!username.trim() || !firstName.trim() || !lastName.trim() || !password || !confirmPassword) {
+    if (!username.trim() || !firstName.trim() || !lastName.trim() || !specialistCode.trim() || !password || !confirmPassword) {
       setValidationError('All fields are required');
       return;
     }
@@ -36,7 +37,7 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
     setIsLoading(true);
     try {
       const displayName = `${firstName.trim()} ${lastName.trim()}`;
-      await onRegister(username.trim(), password, displayName, null);
+      await onRegister(username.trim(), password, displayName, specialistCode.trim());
     } catch (err) {
       // Error handled by parent
     } finally {
@@ -46,7 +47,7 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
 
   return (
     <div className="auth-form">
-      <h2>Create an Account</h2>
+      <h2>Register as a Specialist</h2>
       <form onSubmit={handleSubmit}>
         {(error || validationError) && (
           <div className="error-message" role="alert">
@@ -55,7 +56,7 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
         )}
         
         <div className="form-group">
-          <label htmlFor="username">Username</label>
+          <label htmlFor="username">Username *</label>
           <input
             id="username"
             type="text"
@@ -94,7 +95,23 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
         </div>
 
         <div className="form-group">
-          <label htmlFor="password">Password</label>
+          <label htmlFor="specialistCode">Specialist Registration Code *</label>
+          <input
+            id="specialistCode"
+            type="text"
+            value={specialistCode}
+            onChange={(e) => setSpecialistCode(e.target.value)}
+            placeholder="Enter your specialist code"
+            disabled={isLoading}
+            required
+          />
+          <small style={{ color: '#a1a1aa', fontSize: '0.85rem', display: 'block', marginTop: '0.25rem' }}>
+            Required to register as a specialist and offer services.
+          </small>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="password">Password *</label>
           <input
             id="password"
             type="password"
@@ -107,7 +124,7 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
         </div>
 
         <div className="form-group">
-          <label htmlFor="confirmPassword">Confirm Password</label>
+          <label htmlFor="confirmPassword">Confirm Password *</label>
           <input
             id="confirmPassword"
             type="password"
@@ -120,12 +137,12 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
         </div>
 
         <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Creating account...' : 'Register'}
+          {isLoading ? 'Creating account...' : 'Register as Specialist'}
         </button>
 
         <p className="auth-switch" style={{ marginBottom: '0.5rem' }}>
-          Looking to register as a specialist?{' '}
-          <button type="button" onClick={onSwitchToSpecialist} className="link-button">
+          Looking to register as a regular user?{' '}
+          <button type="button" onClick={onSwitchToRegular} className="link-button">
             Register here
           </button>
         </p>

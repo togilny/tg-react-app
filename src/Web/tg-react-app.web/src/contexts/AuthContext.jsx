@@ -12,9 +12,11 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem('authToken');
     const username = localStorage.getItem('username');
     const userId = localStorage.getItem('userId');
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    const isSpecialist = localStorage.getItem('isSpecialist') === 'true';
 
     if (token && username && userId) {
-      setUser({ username, userId, token });
+      setUser({ username, userId, token, isAdmin, isSpecialist });
     }
     setIsLoading(false);
   }, []);
@@ -24,21 +26,27 @@ export function AuthProvider({ children }) {
     localStorage.setItem('authToken', response.token);
     localStorage.setItem('username', response.username);
     localStorage.setItem('userId', response.userId);
-    setUser({ username: response.username, userId: response.userId, token: response.token });
+    localStorage.setItem('isAdmin', response.isAdmin || false);
+    localStorage.setItem('isSpecialist', response.isSpecialist || false);
+    setUser({ username: response.username, userId: response.userId, token: response.token, isAdmin: response.isAdmin || false, isSpecialist: response.isSpecialist || false });
   }, []);
 
-  const register = useCallback(async (username, password) => {
-    const response = await registerApi(username, password);
+  const register = useCallback(async (username, password, displayName = null, specialistCode = null) => {
+    const response = await registerApi(username, password, displayName, specialistCode);
     localStorage.setItem('authToken', response.token);
     localStorage.setItem('username', response.username);
     localStorage.setItem('userId', response.userId);
-    setUser({ username: response.username, userId: response.userId, token: response.token });
+    localStorage.setItem('isAdmin', response.isAdmin || false);
+    localStorage.setItem('isSpecialist', response.isSpecialist || false);
+    setUser({ username: response.username, userId: response.userId, token: response.token, isAdmin: response.isAdmin || false, isSpecialist: response.isSpecialist || false });
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('username');
     localStorage.removeItem('userId');
+    localStorage.removeItem('isAdmin');
+    localStorage.removeItem('isSpecialist');
     setUser(null);
   }, []);
 

@@ -1,23 +1,33 @@
-using System.Collections.Concurrent;
+using Microsoft.EntityFrameworkCore;
+using TgReactApp.Api.Data;
 using TgReactApp.Api.Models;
 
 namespace TgReactApp.Api.Repositories;
 
-public sealed class InMemoryUserRepository : IUserRepository
+public class EfUserRepository : IUserRepository
 {
-    private readonly ConcurrentDictionary<Guid, User> _usersById = new();
-    private readonly ConcurrentDictionary<string, User> _usersByUsername = new();
+    private readonly GlowBookDbContext _context;
+
+    public EfUserRepository(GlowBookDbContext context)
+    {
+        _context = context;
+    }
 
     public User? GetByUsername(string username)
-        => _usersByUsername.TryGetValue(username.ToLowerInvariant(), out var user) ? user : null;
+    {
+        return _context.Users
+            .FirstOrDefault(u => u.Username.ToLower() == username.ToLower());
+    }
 
     public User? GetById(Guid id)
-        => _usersById.TryGetValue(id, out var user) ? user : null;
+    {
+        return _context.Users.Find(id);
+    }
 
     public User Create(string username, string passwordHash, string? displayName = null, bool isSpecialist = false)
     {
         // First user is admin, or username "tony" is admin
-        var isAdmin = _usersById.Count == 0 || username.Equals("tony", StringComparison.OrdinalIgnoreCase);
+        var isAdmin = !_context.Users.Any() || username.Equals("tony", StringComparison.OrdinalIgnoreCase);
         
         var user = new User
         {
@@ -30,23 +40,20 @@ public sealed class InMemoryUserRepository : IUserRepository
             CreatedAt = DateTime.UtcNow
         };
 
-        _usersById[user.Id] = user;
-        _usersByUsername[username.ToLowerInvariant()] = user;
+        _context.Users.Add(user);
+        _context.SaveChanges();
 
         return user;
     }
 
     public User? Update(Guid id, string? username = null, string? displayName = null, string? passwordHash = null)
     {
-        if (!_usersById.TryGetValue(id, out var user))
-            return null;
+        var user = GetById(id);
+        if (user == null) return null;
 
         if (!string.IsNullOrWhiteSpace(username))
         {
-            // Remove old username from dictionary
-            _usersByUsername.TryRemove(user.Username.ToLowerInvariant(), out _);
             user.Username = username;
-            _usersByUsername[username.ToLowerInvariant()] = user;
         }
 
         if (displayName != null)
@@ -59,6 +66,7 @@ public sealed class InMemoryUserRepository : IUserRepository
             user.PasswordHash = passwordHash;
         }
 
+        _context.SaveChanges();
         return user;
     }
 }

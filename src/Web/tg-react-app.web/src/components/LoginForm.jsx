@@ -21,7 +21,9 @@ export default function LoginForm({ onLogin, onSwitchToRegister, error }) {
 
   return (
     <div className="auth-form">
-      <h2>Login to Noty</h2>
+      <div className="auth-logo">
+        <img src="/GB-Logo-White.png" alt="GlowBook" className="auth-logo-img" />
+      </div>
       <form onSubmit={handleSubmit}>
         {error && (
           <div className="error-message" role="alert">
