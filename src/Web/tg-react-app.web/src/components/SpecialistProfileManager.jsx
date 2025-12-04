@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { fetchMyProfile, updateSpecialist, deleteSpecialist } from '../services/specialistApi';
 import { fetchMyProfile as fetchUserProfile, updateMyProfile } from '../services/authApi';
+import { fetchMyServices } from '../services/serviceApi';
 
 export default function SpecialistProfileManager() {
   const [specialist, setSpecialist] = useState(null);
+  const [services, setServices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -32,7 +34,18 @@ export default function SpecialistProfileManager() {
   useEffect(() => {
     loadProfile();
     loadUserProfile();
+    loadServices();
   }, []);
+  
+  const loadServices = async () => {
+    try {
+      const data = await fetchMyServices();
+      setServices(data);
+    } catch (err) {
+      console.error('Error loading services:', err);
+      setServices([]);
+    }
+  };
 
   const loadUserProfile = async () => {
     try {
@@ -379,6 +392,44 @@ export default function SpecialistProfileManager() {
                 Delete
               </button>
             </div>
+            
+            {/* Services list below specialist card */}
+            {services.length > 0 && (
+              <div style={{ 
+                marginTop: '1rem', 
+                paddingTop: '1rem', 
+                borderTop: '1px solid #3f3f46',
+                width: '100%'
+              }}>
+                <h5 style={{ marginBottom: '0.75rem', color: '#e4e4e7', fontSize: '0.9rem' }}>
+                  My Services:
+                </h5>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {services.map((service) => (
+                    <div key={service.id} style={{
+                      padding: '0.5rem',
+                      background: '#27272a',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.85rem'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <strong style={{ color: '#e4e4e7' }}>{service.name}</strong>
+                          <span style={{ color: '#a1a1aa', marginLeft: '0.5rem' }}>
+                            {service.category} • {service.durationMinutes} min • £{service.price.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                      {service.description && (
+                        <p style={{ color: '#71717a', marginTop: '0.25rem', fontSize: '0.8rem' }}>
+                          {service.description}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

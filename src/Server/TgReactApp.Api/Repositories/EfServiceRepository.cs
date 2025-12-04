@@ -27,6 +27,78 @@ public class EfServiceRepository : IServiceRepository
 
     public Service? GetById(Guid id) => _context.Services.Find(id);
 
+    // New method to get services with specialist information (from Users where IsSpecialist = true)
+    public List<ServiceResponse> GetAllWithSpecialistInfo()
+    {
+        return (from s in _context.Services
+                join specialistUser in _context.Users on s.SpecialistId equals specialistUser.Id into specialistJoin
+                from specialistUser in specialistJoin.DefaultIfEmpty()
+                join creatorUser in _context.Users on s.CreatedByUserId equals creatorUser.Id into creatorJoin
+                from creatorUser in creatorJoin.DefaultIfEmpty()
+                where specialistUser == null || specialistUser.IsSpecialist // Only join if user is a specialist
+                select new ServiceResponse
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Category = s.Category,
+                    DurationMinutes = s.DurationMinutes,
+                    Price = s.Price,
+                    Description = s.Description,
+                    SpecialistId = s.SpecialistId,
+                    SpecialistDisplayName = s.SpecialistId != null && specialistUser != null
+                        ? (specialistUser.DisplayName ?? specialistUser.Name ?? specialistUser.Username)
+                        : null,
+                    CreatedByUserId = s.CreatedByUserId,
+                    CreatedByDisplayName = creatorUser != null
+                        ? (creatorUser.DisplayName ?? creatorUser.Name ?? creatorUser.Username)
+                        : null,
+                    CreatedAt = s.CreatedAt
+                })
+                .ToList();
+    }
+
+    // Get service by ID with specialist information
+    public ServiceResponse? GetByIdWithSpecialistInfo(Guid id)
+    {
+        var service = _context.Services.Find(id);
+        if (service == null) return null;
+
+        string? specialistDisplayName = null;
+        if (service.SpecialistId != null)
+        {
+            var specialistUser = _context.Users.Find(service.SpecialistId);
+            if (specialistUser != null && specialistUser.IsSpecialist)
+            {
+                specialistDisplayName = specialistUser.DisplayName ?? specialistUser.Name ?? specialistUser.Username;
+            }
+        }
+
+        string? createdByDisplayName = null;
+        if (service.CreatedByUserId != null)
+        {
+            var creatorUser = _context.Users.Find(service.CreatedByUserId);
+            if (creatorUser != null)
+            {
+                createdByDisplayName = creatorUser.DisplayName ?? creatorUser.Name ?? creatorUser.Username;
+            }
+        }
+
+        return new ServiceResponse
+        {
+            Id = service.Id,
+            Name = service.Name,
+            Category = service.Category,
+            DurationMinutes = service.DurationMinutes,
+            Price = service.Price,
+            Description = service.Description,
+            SpecialistId = service.SpecialistId,
+            SpecialistDisplayName = specialistDisplayName,
+            CreatedByUserId = service.CreatedByUserId,
+            CreatedByDisplayName = createdByDisplayName,
+            CreatedAt = service.CreatedAt
+        };
+    }
+
     public Service Add(string name, string category, int durationMinutes, decimal price, string? description, Guid? specialistId = null, Guid? createdByUserId = null)
     {
         var service = new Service

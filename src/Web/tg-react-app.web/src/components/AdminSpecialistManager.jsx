@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { fetchSpecialists, createSpecialist, updateSpecialist, deleteSpecialist } from '../services/specialistApi';
+import { fetchServicesBySpecialist } from '../services/serviceApi';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminSpecialistManager() {
+  const { user } = useAuth();
   const [specialists, setSpecialists] = useState([]);
+  const [specialistServices, setSpecialistServices] = useState({}); // Map specialistId -> services[]
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -31,6 +35,18 @@ export default function AdminSpecialistManager() {
     try {
       const data = await fetchSpecialists();
       setSpecialists(data);
+      
+      // Load services for each specialist
+      const servicesMap = {};
+      for (const specialist of data) {
+        try {
+          const services = await fetchServicesBySpecialist(specialist.id);
+          servicesMap[specialist.id] = services.filter(s => s.specialistId === specialist.id);
+        } catch (err) {
+          servicesMap[specialist.id] = [];
+        }
+      }
+      setSpecialistServices(servicesMap);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -269,44 +285,85 @@ export default function AdminSpecialistManager() {
       )}
 
       <div className="specialists-grid">
-        {specialists.map((specialist) => (
-          <div key={specialist.id} className="specialist-admin-card">
-            <div className="specialist-admin-icon">
-              {specialist.imageUrl && !imageErrors[specialist.id] ? (
-                <img 
-                  src={specialist.imageUrl} 
-                  alt={`${specialist.name} logo`}
-                  style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: 'contain',
-                    borderRadius: '0.5rem'
-                  }}
-                  onError={() => setImageErrors(prev => ({ ...prev, [specialist.id]: true }))}
-                />
-              ) : (
-                getCategoryIcon(specialist.category)
+        {specialists.map((specialist) => {
+          const services = specialistServices[specialist.id] || [];
+          return (
+            <div key={specialist.id} className="specialist-admin-card">
+              <div className="specialist-admin-icon">
+                {specialist.imageUrl && !imageErrors[specialist.id] ? (
+                  <img 
+                    src={specialist.imageUrl} 
+                    alt={`${specialist.name} logo`}
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'contain',
+                      borderRadius: '0.5rem'
+                    }}
+                    onError={() => setImageErrors(prev => ({ ...prev, [specialist.id]: true }))}
+                  />
+                ) : (
+                  getCategoryIcon(specialist.category)
+                )}
+              </div>
+              <div className="specialist-admin-info">
+                <h4>{specialist.name}</h4>
+                <span className="specialist-badge">{specialist.category}</span>
+                <p className="specialist-description">{specialist.description || 'No description'}</p>
+                <div className="specialist-details">
+                  <span>{getRatingStars(specialist.rating)}</span>
+                  <span className="specialist-price">£{specialist.pricePerHour}/hour</span>
+                </div>
+              </div>
+              <div className="specialist-admin-actions">
+                <button onClick={() => handleEdit(specialist)} className="btn-edit">
+                  Edit
+                </button>
+                <button onClick={() => handleDelete(specialist.id)} className="btn-delete">
+                  Delete
+                </button>
+              </div>
+              
+              {/* Services list below specialist card */}
+              {services.length > 0 && (
+                <div style={{ 
+                  marginTop: '1rem', 
+                  paddingTop: '1rem', 
+                  borderTop: '1px solid #3f3f46',
+                  width: '100%'
+                }}>
+                  <h5 style={{ marginBottom: '0.75rem', color: '#e4e4e7', fontSize: '0.9rem' }}>
+                    Services Offered:
+                  </h5>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {services.map((service) => (
+                      <div key={service.id} style={{
+                        padding: '0.5rem',
+                        background: '#27272a',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.85rem'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <strong style={{ color: '#e4e4e7' }}>{service.name}</strong>
+                            <span style={{ color: '#a1a1aa', marginLeft: '0.5rem' }}>
+                              {service.category} • {service.durationMinutes} min • £{service.price.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        {service.description && (
+                          <p style={{ color: '#71717a', marginTop: '0.25rem', fontSize: '0.8rem' }}>
+                            {service.description}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
-            <div className="specialist-admin-info">
-              <h4>{specialist.name}</h4>
-              <span className="specialist-badge">{specialist.category}</span>
-              <p className="specialist-description">{specialist.description || 'No description'}</p>
-              <div className="specialist-details">
-                <span>{getRatingStars(specialist.rating)}</span>
-                <span className="specialist-price">£{specialist.pricePerHour}/hour</span>
-              </div>
-            </div>
-            <div className="specialist-admin-actions">
-              <button onClick={() => handleEdit(specialist)} className="btn-edit">
-                Edit
-              </button>
-              <button onClick={() => handleDelete(specialist.id)} className="btn-delete">
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {specialists.length === 0 && !showForm && (

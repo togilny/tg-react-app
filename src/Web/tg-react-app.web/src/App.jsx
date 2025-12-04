@@ -165,12 +165,6 @@ function GlowBookApp() {
               </button>
             )}
             <button
-              className={`tab ${currentView === 'admin-services' ? 'active' : ''}`}
-              onClick={() => setCurrentView('admin-services')}
-            >
-              🛠️ Services
-            </button>
-            <button
               className={`tab ${currentView === 'admin-clients' ? 'active' : ''}`}
               onClick={() => setCurrentView('admin-clients')}
             >
@@ -231,19 +225,23 @@ function GlowBookApp() {
             />
           </section>
         ) : currentView === 'admin-specialists' ? (
-          <section className="card">
-            {user.isSpecialist ? (
-              // If user is a specialist (even if admin), show only their profile
-              <SpecialistProfileManager />
-            ) : (
-              // Only pure admins (not specialists) see all specialists
-              <AdminSpecialistManager />
+          <>
+            <section className="card">
+              {user.isSpecialist ? (
+                // If user is a specialist (even if admin), show only their profile
+                <SpecialistProfileManager />
+              ) : (
+                // Only pure admins (not specialists) see all specialists
+                <AdminSpecialistManager />
+              )}
+            </section>
+            {/* Service Management for Specialists Only - shown below Specialist Management */}
+            {user.isSpecialist && (
+              <section className="card" style={{ marginTop: '1.5rem' }}>
+                <SpecialistServiceManager />
+              </section>
             )}
-          </section>
-        ) : currentView === 'admin-services' ? (
-          <section className="card">
-            <AdminServiceManager />
-          </section>
+          </>
         ) : currentView === 'admin-clients' ? (
           <section className="card">
             <AdminClientManager />

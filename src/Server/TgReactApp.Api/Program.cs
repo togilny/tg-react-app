@@ -84,7 +84,7 @@ try
         // Seed initial data if database is empty
         try
         {
-            if (!dbContext.Specialists.Any())
+            if (!dbContext.Services.Any())
             {
                 logger.LogInformation("Seeding initial data...");
                 SeedInitialData(dbContext);
@@ -163,18 +163,17 @@ auth.MapPost("/register", (RegisterRequest request, HttpContext context, IUserRe
         var passwordHash = authService.HashPassword(request.Password);
         var user = userRepo.Create(request.Username, passwordHash, request.DisplayName, isSpecialist);
 
-        // If user is a specialist (valid code provided), create a Specialist profile
+        // If user is a specialist (valid code provided), update user with specialist fields
         if (isSpecialist && !string.IsNullOrWhiteSpace(request.DisplayName))
         {
-            specialistRepo.Add(
-                name: request.DisplayName,
-                category: "General", // Default category, can be changed later
-                description: null,
-                imageUrl: null,
-                pricePerHour: 50, // Default price, can be changed later
-                rating: 5, // Default rating
-                userId: user.Id // Link specialist to user
-            );
+            user.Name = request.DisplayName;
+            user.DisplayName = request.DisplayName;
+            user.Category = "General"; // Default category, can be changed later
+            user.PricePerHour = 50; // Default price, can be changed later
+            user.Rating = 5; // Default rating
+            // Save the updated user - get context from service provider
+            var dbContext = context.RequestServices.GetRequiredService<GlowBookDbContext>();
+            dbContext.SaveChanges();
         }
 
         var token = authService.GenerateToken(user);
@@ -530,7 +529,7 @@ bookings.MapGet("/specialist/{specialistId:guid}/date/{date}",
 });
 
 bookings.MapPost("/", (CreateBookingRequest request, HttpContext context, IBookingRepository repository, 
-    ISpecialistRepository specialistRepo, IAuthService authService) =>
+    IUserRepository userRepo, IAuthService authService) =>
 {
     var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
     var token = authHeader.Replace("Bearer ", "");
@@ -538,9 +537,10 @@ bookings.MapPost("/", (CreateBookingRequest request, HttpContext context, IBooki
     
     if (userId == null) return Results.Unauthorized();
 
-    // Validate specialist exists
-    var specialist = specialistRepo.GetById(request.SpecialistId);
-    if (specialist == null) return Results.BadRequest(new { message = "Specialist not found." });
+    // Validate specialist exists (user with IsSpecialist = true)
+    var specialist = userRepo.GetById(request.SpecialistId);
+    if (specialist == null || !specialist.IsSpecialist) 
+        return Results.BadRequest(new { message = "Specialist not found." });
 
     // Parse times
     if (!TimeSpan.TryParse(request.StartTime, out var startTime) ||
@@ -582,29 +582,108 @@ bookings.MapDelete("/{id:guid}", (Guid id, HttpContext context, IBookingReposito
 // Services endpoints - Public (read) and Admin (write)
 var services = app.MapGroup("/api/services").WithTags("Services");
 
-services.MapGet("/", (IServiceRepository repository, string? category) =>
+services.MapGet("/", (IServiceRepository repository, string? category, GlowBookDbContext dbContext) =>
 {
-    // Only return general services (not specialist-specific)
-    var allServices = repository.GetAll().Where(s => s.SpecialistId == null).ToList();
+    // Get all services with specialist information
+    List<ServiceResponse> allServices;
+    
+    if (repository is EfServiceRepository efRepo)
+    {
+        allServices = efRepo.GetAllWithSpecialistInfo();
+    }
+    else
+    {
+        // Fallback for in-memory repository
+        allServices = repository.GetAll().Select(s => new ServiceResponse
+        {
+            Id = s.Id,
+            Name = s.Name,
+            Category = s.Category,
+            DurationMinutes = s.DurationMinutes,
+            Price = s.Price,
+            Description = s.Description,
+            SpecialistId = s.SpecialistId,
+            SpecialistDisplayName = null,
+            CreatedByUserId = s.CreatedByUserId,
+            CreatedByDisplayName = null,
+            CreatedAt = s.CreatedAt
+        }).ToList();
+    }
+    
+    // Filter by category if provided
     var results = string.IsNullOrWhiteSpace(category)
         ? allServices
         : allServices.Where(s => s.Category.Equals(category, StringComparison.OrdinalIgnoreCase)).ToList();
+    
     return Results.Ok(results);
 });
 
 services.MapGet("/{id:guid}", (Guid id, IServiceRepository repository) =>
 {
-    var service = repository.GetById(id);
+    ServiceResponse? service;
+    
+    if (repository is EfServiceRepository efRepo)
+    {
+        service = efRepo.GetByIdWithSpecialistInfo(id);
+    }
+    else
+    {
+        // Fallback for in-memory repository
+        var s = repository.GetById(id);
+        service = s != null ? new ServiceResponse
+        {
+            Id = s.Id,
+            Name = s.Name,
+            Category = s.Category,
+            DurationMinutes = s.DurationMinutes,
+            Price = s.Price,
+            Description = s.Description,
+            SpecialistId = s.SpecialistId,
+            SpecialistDisplayName = null,
+            CreatedByUserId = s.CreatedByUserId,
+            CreatedByDisplayName = null,
+            CreatedAt = s.CreatedAt
+        } : null;
+    }
+    
     return service is null ? Results.NotFound() : Results.Ok(service);
 });
 
 // Get services for a specific specialist
-services.MapGet("/by-specialist/{specialistId:guid}", (Guid specialistId, IServiceRepository repository, string? category) =>
+services.MapGet("/by-specialist/{specialistId:guid}", (Guid specialistId, IServiceRepository repository, string? category, GlowBookDbContext dbContext) =>
 {
-    var specialistServices = repository.GetBySpecialist(specialistId);
+    List<ServiceResponse> specialistServices;
+    
+    if (repository is EfServiceRepository efRepo)
+    {
+        specialistServices = efRepo.GetAllWithSpecialistInfo()
+            .Where(s => s.SpecialistId == specialistId || s.SpecialistId == null)
+            .ToList();
+    }
+    else
+    {
+        specialistServices = repository.GetBySpecialist(specialistId)
+            .Select(s => new ServiceResponse
+            {
+                Id = s.Id,
+                Name = s.Name,
+                Category = s.Category,
+                DurationMinutes = s.DurationMinutes,
+                Price = s.Price,
+                Description = s.Description,
+                SpecialistId = s.SpecialistId,
+                SpecialistDisplayName = null,
+                CreatedByUserId = s.CreatedByUserId,
+                CreatedByDisplayName = null,
+                CreatedAt = s.CreatedAt
+            })
+            .ToList();
+    }
+    
     var results = string.IsNullOrWhiteSpace(category)
         ? specialistServices
         : specialistServices.Where(s => s.Category.Equals(category, StringComparison.OrdinalIgnoreCase)).ToList();
+    
     return Results.Ok(results);
 });
 
@@ -667,7 +746,7 @@ services.MapDelete("/{id:guid}", (Guid id, HttpContext context, IServiceReposito
 });
 
 // Specialist service management endpoints
-services.MapGet("/my-services", (HttpContext context, IServiceRepository serviceRepo, ISpecialistRepository specialistRepo, IUserRepository userRepo, IAuthService authService) =>
+services.MapGet("/my-services", (HttpContext context, IServiceRepository serviceRepo, IUserRepository userRepo, IAuthService authService, GlowBookDbContext dbContext) =>
 {
     var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
     var token = authHeader.Replace("Bearer ", "");
@@ -678,14 +757,38 @@ services.MapGet("/my-services", (HttpContext context, IServiceRepository service
     var user = userRepo.GetById(userId.Value);
     if (user == null || !user.IsSpecialist) return Results.Forbid();
 
-    var specialist = specialistRepo.GetByUserId(userId.Value);
-    if (specialist == null) return Results.NotFound(new { message = "Specialist profile not found." });
-
-    var myServices = serviceRepo.GetBySpecialist(specialist.Id);
+    // Get services for this specialist (userId is now the specialistId since they're merged)
+    List<ServiceResponse> myServices;
+    if (serviceRepo is EfServiceRepository efRepo)
+    {
+        myServices = efRepo.GetAllWithSpecialistInfo()
+            .Where(s => s.SpecialistId == userId.Value)
+            .ToList();
+    }
+    else
+    {
+        myServices = serviceRepo.GetBySpecialist(userId.Value)
+            .Select(s => new ServiceResponse
+            {
+                Id = s.Id,
+                Name = s.Name,
+                Category = s.Category,
+                DurationMinutes = s.DurationMinutes,
+                Price = s.Price,
+                Description = s.Description,
+                SpecialistId = s.SpecialistId,
+                SpecialistDisplayName = user.DisplayName ?? user.Name ?? user.Username,
+                CreatedByUserId = s.CreatedByUserId,
+                CreatedByDisplayName = null, // Would need to query if not using EF
+                CreatedAt = s.CreatedAt
+            })
+            .ToList();
+    }
+    
     return Results.Ok(myServices);
 });
 
-services.MapPost("/my-services", (CreateServiceRequest request, HttpContext context, IServiceRepository serviceRepo, ISpecialistRepository specialistRepo, IUserRepository userRepo, IAuthService authService) =>
+services.MapPost("/my-services", (CreateServiceRequest request, HttpContext context, IServiceRepository serviceRepo, IUserRepository userRepo, IAuthService authService) =>
 {
     var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
     var token = authHeader.Replace("Bearer ", "");
@@ -695,9 +798,6 @@ services.MapPost("/my-services", (CreateServiceRequest request, HttpContext cont
 
     var user = userRepo.GetById(userId.Value);
     if (user == null || !user.IsSpecialist) return Results.Forbid();
-
-    var specialist = specialistRepo.GetByUserId(userId.Value);
-    if (specialist == null) return Results.NotFound(new { message = "Specialist profile not found." });
 
     if (string.IsNullOrWhiteSpace(request.Name))
         return Results.BadRequest(new { message = "Service name is required." });
@@ -706,15 +806,25 @@ services.MapPost("/my-services", (CreateServiceRequest request, HttpContext cont
         return Results.BadRequest(new { message = "Duration must be greater than 0." });
 
     // Check for duplicate service name for this specialist
-    var existingServices = serviceRepo.GetBySpecialist(specialist.Id);
-    if (existingServices.Any(s => s.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase) && s.SpecialistId == specialist.Id))
+    var existingServices = serviceRepo.GetBySpecialist(userId.Value);
+    if (existingServices.Any(s => s.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase) && s.SpecialistId == userId.Value))
         return Results.BadRequest(new { message = "You already have a service with this name." });
 
-    var service = serviceRepo.Add(request.Name, request.Category, request.DurationMinutes, request.Price, request.Description, specialist.Id, userId.Value);
+    // Create service linked to this specialist (userId is now the specialistId)
+    // CreatedByUserId is also userId (the specialist creating their own service)
+    var service = serviceRepo.Add(request.Name, request.Category, request.DurationMinutes, request.Price, request.Description, userId.Value, userId.Value);
+    
+    // Return service with full information including display names
+    if (serviceRepo is EfServiceRepository efRepo)
+    {
+        var serviceResponse = efRepo.GetByIdWithSpecialistInfo(service.Id);
+        return Results.Created($"/api/services/{service.Id}", serviceResponse);
+    }
+    
     return Results.Created($"/api/services/{service.Id}", service);
 });
 
-services.MapPut("/my-services/{id:guid}", (Guid id, UpdateServiceRequest request, HttpContext context, IServiceRepository serviceRepo, ISpecialistRepository specialistRepo, IUserRepository userRepo, IAuthService authService) =>
+services.MapPut("/my-services/{id:guid}", (Guid id, UpdateServiceRequest request, HttpContext context, IServiceRepository serviceRepo, IUserRepository userRepo, IAuthService authService) =>
 {
     var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
     var token = authHeader.Replace("Bearer ", "");
@@ -725,21 +835,26 @@ services.MapPut("/my-services/{id:guid}", (Guid id, UpdateServiceRequest request
     var user = userRepo.GetById(userId.Value);
     if (user == null || !user.IsSpecialist) return Results.Forbid();
 
-    var specialist = specialistRepo.GetByUserId(userId.Value);
-    if (specialist == null) return Results.NotFound(new { message = "Specialist profile not found." });
-
     var service = serviceRepo.GetById(id);
     if (service == null) return Results.NotFound();
-    if (service.SpecialistId != specialist.Id) return Results.Json(new { message = "You can only update your own services." }, statusCode: 403);
+    if (service.SpecialistId != userId.Value) return Results.Json(new { message = "You can only update your own services." }, statusCode: 403);
 
     if (string.IsNullOrWhiteSpace(request.Name))
         return Results.BadRequest(new { message = "Service name is required." });
 
-    var updated = serviceRepo.Update(id, request.Name, request.Category, request.DurationMinutes, request.Price, request.Description, specialist.Id);
+    var updated = serviceRepo.Update(id, request.Name, request.Category, request.DurationMinutes, request.Price, request.Description, userId.Value);
+    
+    // Return service with full information including display names
+    if (serviceRepo is EfServiceRepository efRepo && updated != null)
+    {
+        var serviceResponse = efRepo.GetByIdWithSpecialistInfo(updated.Id);
+        return Results.Ok(serviceResponse);
+    }
+    
     return updated is null ? Results.NotFound() : Results.Ok(updated);
 });
 
-services.MapDelete("/my-services/{id:guid}", (Guid id, HttpContext context, IServiceRepository serviceRepo, ISpecialistRepository specialistRepo, IUserRepository userRepo, IAuthService authService) =>
+services.MapDelete("/my-services/{id:guid}", (Guid id, HttpContext context, IServiceRepository serviceRepo, IUserRepository userRepo, IAuthService authService) =>
 {
     var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
     var token = authHeader.Replace("Bearer ", "");
@@ -750,12 +865,9 @@ services.MapDelete("/my-services/{id:guid}", (Guid id, HttpContext context, ISer
     var user = userRepo.GetById(userId.Value);
     if (user == null || !user.IsSpecialist) return Results.Forbid();
 
-    var specialist = specialistRepo.GetByUserId(userId.Value);
-    if (specialist == null) return Results.NotFound(new { message = "Specialist profile not found." });
-
     var service = serviceRepo.GetById(id);
     if (service == null) return Results.NotFound();
-    if (service.SpecialistId != specialist.Id) return Results.Json(new { message = "You can only delete your own services." }, statusCode: 403);
+    if (service.SpecialistId != userId.Value) return Results.Json(new { message = "You can only delete your own services." }, statusCode: 403);
 
     var deleted = serviceRepo.Delete(id);
     return deleted ? Results.NoContent() : Results.NotFound();
@@ -913,185 +1025,7 @@ clients.MapDelete("/{clientId:guid}/prices/{serviceId:guid}", (Guid clientId, Gu
 
 static void SeedInitialData(GlowBookDbContext context)
 {
-    if (context.Specialists.Any()) return; // Already seeded
-
-    // Seed Specialists
-    var specialists = new[]
-    {
-        new Specialist
-        {
-            Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            Name = "Sarah Johnson",
-            Category = "Hair",
-            Description = "Expert hair stylist with 10+ years experience",
-            PricePerHour = 60,
-            Rating = 5,
-            CreatedAt = DateTime.UtcNow
-        },
-        new Specialist
-        {
-            Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-            Name = "Emily Chen",
-            Category = "Nails",
-            Description = "Certified nail technician specializing in nail art",
-            PricePerHour = 45,
-            Rating = 5,
-            CreatedAt = DateTime.UtcNow
-        },
-        new Specialist
-        {
-            Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
-            Name = "Maria Garcia",
-            Category = "Makeup",
-            Description = "Professional makeup artist for all occasions",
-            PricePerHour = 80,
-            Rating = 5,
-            CreatedAt = DateTime.UtcNow
-        },
-        new Specialist
-        {
-            Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
-            Name = "Jessica Lee",
-            Category = "Hair",
-            Description = "Specializing in color and balayage",
-            PricePerHour = 70,
-            Rating = 4,
-            CreatedAt = DateTime.UtcNow
-        },
-        new Specialist
-        {
-            Id = Guid.Parse("55555555-5555-5555-5555-555555555555"),
-            Name = "Amanda White",
-            Category = "Nails",
-            Description = "Gel extensions and manicure expert",
-            PricePerHour = 50,
-            Rating = 5,
-            CreatedAt = DateTime.UtcNow
-        }
-    };
-
-    context.Specialists.AddRange(specialists);
-
-    // Seed Services
-    var services = new[]
-    {
-        // Hair Services
-        new Service
-        {
-            Id = Guid.Parse("a1111111-1111-1111-1111-111111111111"),
-            Name = "Women's Haircut",
-            Category = "Hair",
-            DurationMinutes = 45,
-            Price = 50,
-            Description = "Professional haircut and styling",
-            CreatedAt = DateTime.UtcNow
-        },
-        new Service
-        {
-            Id = Guid.Parse("a2222222-2222-2222-2222-222222222222"),
-            Name = "Men's Haircut",
-            Category = "Hair",
-            DurationMinutes = 30,
-            Price = 35,
-            Description = "Classic men's haircut",
-            CreatedAt = DateTime.UtcNow
-        },
-        new Service
-        {
-            Id = Guid.Parse("a3333333-3333-3333-3333-333333333333"),
-            Name = "Hair Coloring",
-            Category = "Hair",
-            DurationMinutes = 120,
-            Price = 120,
-            Description = "Full hair coloring service",
-            CreatedAt = DateTime.UtcNow
-        },
-        new Service
-        {
-            Id = Guid.Parse("a4444444-4444-4444-4444-444444444444"),
-            Name = "Balayage",
-            Category = "Hair",
-            DurationMinutes = 180,
-            Price = 180,
-            Description = "Balayage highlights",
-            CreatedAt = DateTime.UtcNow
-        },
-        // Nail Services
-        new Service
-        {
-            Id = Guid.Parse("b1111111-1111-1111-1111-111111111111"),
-            Name = "Classic Manicure",
-            Category = "Nails",
-            DurationMinutes = 30,
-            Price = 25,
-            Description = "Traditional manicure",
-            CreatedAt = DateTime.UtcNow
-        },
-        new Service
-        {
-            Id = Guid.Parse("b2222222-2222-2222-2222-222222222222"),
-            Name = "Gel Manicure",
-            Category = "Nails",
-            DurationMinutes = 45,
-            Price = 40,
-            Description = "Long-lasting gel manicure",
-            CreatedAt = DateTime.UtcNow
-        },
-        new Service
-        {
-            Id = Guid.Parse("b3333333-3333-3333-3333-333333333333"),
-            Name = "Pedicure",
-            Category = "Nails",
-            DurationMinutes = 60,
-            Price = 45,
-            Description = "Relaxing pedicure service",
-            CreatedAt = DateTime.UtcNow
-        },
-        new Service
-        {
-            Id = Guid.Parse("b4444444-4444-4444-4444-444444444444"),
-            Name = "Nail Art",
-            Category = "Nails",
-            DurationMinutes = 90,
-            Price = 65,
-            Description = "Custom nail art design",
-            CreatedAt = DateTime.UtcNow
-        },
-        // Makeup Services
-        new Service
-        {
-            Id = Guid.Parse("c1111111-1111-1111-1111-111111111111"),
-            Name = "Everyday Makeup",
-            Category = "Makeup",
-            DurationMinutes = 45,
-            Price = 60,
-            Description = "Natural everyday look",
-            CreatedAt = DateTime.UtcNow
-        },
-        new Service
-        {
-            Id = Guid.Parse("c2222222-2222-2222-2222-222222222222"),
-            Name = "Special Event Makeup",
-            Category = "Makeup",
-            DurationMinutes = 90,
-            Price = 100,
-            Description = "Glamorous makeup for special occasions",
-            CreatedAt = DateTime.UtcNow
-        },
-        new Service
-        {
-            Id = Guid.Parse("c3333333-3333-3333-3333-333333333333"),
-            Name = "Bridal Makeup",
-            Category = "Makeup",
-            DurationMinutes = 120,
-            Price = 150,
-            Description = "Complete bridal makeup package",
-            CreatedAt = DateTime.UtcNow
-        }
-    };
-
-    context.Services.AddRange(services);
-    context.SaveChanges();
+    // No data seeded - specialists and services will be created through the application
 }
 
 app.Run();
