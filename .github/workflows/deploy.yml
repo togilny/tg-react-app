@@ -1,0 +1,93 @@
+name: Deploy Application
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+  release:
+    types: [published]
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: windows-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Backend Build
+    - name: Setup .NET 9
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore backend dependencies
+      working-directory: src/Server/TgReactApp.Api
+      run: dotnet restore
+
+    - name: Build backend
+      working-directory: src/Server/TgReactApp.Api
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Publish backend
+      working-directory: src/Server/TgReactApp.Api
+      run: dotnet publish --no-build --configuration Release --output ${{github.workspace}}/publish/api
+
+    # Frontend Build
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: src/Web/tg-react-app.web/package-lock.json
+
+    - name: Install frontend dependencies
+      working-directory: src/Web/tg-react-app.web
+      run: npm ci
+
+    - name: Build frontend
+      working-directory: src/Web/tg-react-app.web
+      run: npm run build
+      env:
+        CI: true
+
+    # Create deployment package
+    - name: Create deployment package
+      run: |
+        Compress-Archive -Path ${{github.workspace}}/publish/api/* -DestinationPath ${{github.workspace}}/deploy-api.zip
+        Compress-Archive -Path src/Web/tg-react-app.web/dist/* -DestinationPath ${{github.workspace}}/deploy-frontend.zip
+
+    - name: Upload deployment artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: deployment-package-${{ github.event.inputs.environment || 'production' }}
+        path: |
+          ${{github.workspace}}/deploy-api.zip
+          ${{github.workspace}}/deploy-frontend.zip
+        retention-days: 30
+
+    # Add your deployment steps here
+    # Examples:
+    # - Deploy to Azure App Service
+    # - Deploy to AWS
+    # - Deploy to IIS
+    # - Deploy via FTP/SFTP
+    # - Deploy to Docker containers
+    
+    - name: Deployment notification
+      run: |
+        echo "🚀 Deployment package created for ${{ github.event.inputs.environment || 'production' }}"
+        echo "Backend package: deploy-api.zip"
+        echo "Frontend package: deploy-frontend.zip"
+        echo ""
+        echo "Add your deployment steps to this workflow to automatically deploy to your hosting environment."
+

@@ -1,5 +1,7 @@
 # Tg React App
 
+[![Build and Test](https://github.com/YOUR_USERNAME/tg.react.app/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/YOUR_USERNAME/tg.react.app/actions/workflows/build-and-test.yml)
+
 Modern .NET 9 + React reference that keeps a simple delivery checklist in sync between a backend API and a Vite powered SPA.
 
 ## Projects
@@ -51,4 +53,29 @@ Static assets are emitted to `dist/`; they can be hosted behind any static file 
 - `GET /api/health` &mdash; simple status check.
 
 The in-memory repository keeps things lightweight for local demos but can be swapped with a persistent store by re-implementing `ITodoRepository`.
+
+## CI/CD Pipeline
+
+This project includes automated GitHub Actions workflows for continuous integration and deployment:
+
+### 🔨 Automated Builds
+- **Build and Test** - Runs on every push and pull request
+  - Builds both backend (.NET 9) and frontend (React + Vite)
+  - Runs tests and linting
+  - Creates build artifacts
+
+### ✅ Pull Request Validation
+- **PR Validation** - Comprehensive checks on pull requests
+  - Code quality analysis
+  - Security vulnerability scanning
+  - Bundle size monitoring
+  - Automated PR summary comments
+
+### 🚀 Deployment
+- **Deploy Workflow** - Manual or release-triggered deployment
+  - Creates production-ready packages
+  - Supports multiple environments (staging/production)
+  - Ready to integrate with Azure, AWS, or your hosting provider
+
+📚 **[View Complete CI/CD Guide](.github/WORKFLOWS_GUIDE.md)** for setup instructions and customization options.
 
