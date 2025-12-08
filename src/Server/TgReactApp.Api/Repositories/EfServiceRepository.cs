@@ -35,7 +35,7 @@ public class EfServiceRepository : IServiceRepository
                 from specialistUser in specialistJoin.DefaultIfEmpty()
                 join creatorUser in _context.Users on s.CreatedByUserId equals creatorUser.Id into creatorJoin
                 from creatorUser in creatorJoin.DefaultIfEmpty()
-                where specialistUser == null || specialistUser.IsSpecialist // Only join if user is a specialist
+                // Don't filter here - include all services, specialist info will be null if not a specialist
                 select new ServiceResponse
                 {
                     Id = s.Id,
@@ -45,7 +45,37 @@ public class EfServiceRepository : IServiceRepository
                     Price = s.Price,
                     Description = s.Description,
                     SpecialistId = s.SpecialistId,
-                    SpecialistDisplayName = s.SpecialistId != null && specialistUser != null
+                    SpecialistDisplayName = s.SpecialistId != null && specialistUser != null && specialistUser.IsSpecialist
+                        ? (specialistUser.DisplayName ?? specialistUser.Name ?? specialistUser.Username)
+                        : null,
+                    CreatedByUserId = s.CreatedByUserId,
+                    CreatedByDisplayName = creatorUser != null
+                        ? (creatorUser.DisplayName ?? creatorUser.Name ?? creatorUser.Username)
+                        : null,
+                    CreatedAt = s.CreatedAt
+                })
+                .ToList();
+    }
+
+    // Get services for a specific specialist with display name
+    public List<ServiceResponse> GetBySpecialistWithInfo(Guid specialistId)
+    {
+        return (from s in _context.Services
+                join specialistUser in _context.Users on s.SpecialistId equals specialistUser.Id into specialistJoin
+                from specialistUser in specialistJoin.DefaultIfEmpty()
+                join creatorUser in _context.Users on s.CreatedByUserId equals creatorUser.Id into creatorJoin
+                from creatorUser in creatorJoin.DefaultIfEmpty()
+                where s.SpecialistId == specialistId
+                select new ServiceResponse
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Category = s.Category,
+                    DurationMinutes = s.DurationMinutes,
+                    Price = s.Price,
+                    Description = s.Description,
+                    SpecialistId = s.SpecialistId,
+                    SpecialistDisplayName = specialistUser != null && specialistUser.IsSpecialist
                         ? (specialistUser.DisplayName ?? specialistUser.Name ?? specialistUser.Username)
                         : null,
                     CreatedByUserId = s.CreatedByUserId,
