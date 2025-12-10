@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchSpecialists, createSpecialist, updateSpecialist, deleteSpecialist } from '../services/specialistApi';
-import { fetchServicesBySpecialist, updateService, deleteService } from '../services/serviceApi';
+import { fetchServicesBySpecialist } from '../services/serviceApi';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminSpecialistManager() {
@@ -11,7 +11,6 @@ export default function AdminSpecialistManager() {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingSpecialist, setEditingSpecialist] = useState(null);
-  const [editingService, setEditingService] = useState(null);
   const [imageErrors, setImageErrors] = useState({});
   const [logoPreview, setLogoPreview] = useState(null);
   
@@ -105,19 +104,6 @@ export default function AdminSpecialistManager() {
     setEditingSpecialist(null);
     setFormData({ name: '', category: 'Hair', description: '', imageUrl: '', pricePerHour: 50, rating: 5 });
     setLogoPreview(null);
-  };
-
-  const handleDeleteService = async (serviceId, specialistId) => {
-    if (!confirm('Are you sure you want to delete this service?')) return;
-    
-    try {
-      await deleteService(serviceId);
-      // Reload services for this specialist
-      const services = await fetchServicesBySpecialist(specialistId);
-      setSpecialistServices(prev => ({ ...prev, [specialistId]: services.filter(s => s.specialistId === specialistId) }));
-    } catch (err) {
-      setError(err.message);
-    }
   };
 
   const getCategoryIcon = (category) => {
@@ -357,31 +343,12 @@ export default function AdminSpecialistManager() {
                         borderRadius: '0.375rem',
                         fontSize: '0.85rem'
                       }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                          <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
                             <strong style={{ color: '#e4e4e7' }}>{service.name}</strong>
                             <span style={{ color: '#a1a1aa', marginLeft: '0.5rem' }}>
                               {service.category} • {service.durationMinutes} min • £{service.price.toFixed(2)}
                             </span>
-                          </div>
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button 
-                              onClick={() => {
-                                // Navigate to service edit - for now, show alert to use service management below
-                                alert('Please use the Service Management section below to edit services.');
-                              }}
-                              className="btn-edit"
-                              style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                            >
-                              Edit
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteService(service.id, specialist.id)}
-                              className="btn-delete"
-                              style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                            >
-                              Delete
-                            </button>
                           </div>
                         </div>
                         {service.description && (

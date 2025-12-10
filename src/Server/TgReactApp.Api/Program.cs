@@ -649,21 +649,20 @@ services.MapGet("/{id:guid}", (Guid id, IServiceRepository repository) =>
     return service is null ? Results.NotFound() : Results.Ok(service);
 });
 
-// Get services for a specific specialist (only services where SpecialistId matches)
+// Get services for a specific specialist
 services.MapGet("/by-specialist/{specialistId:guid}", (Guid specialistId, IServiceRepository repository, string? category, GlowBookDbContext dbContext) =>
 {
     List<ServiceResponse> specialistServices;
     
     if (repository is EfServiceRepository efRepo)
     {
-        // Use the optimized method that joins with Users to get display name
-        specialistServices = efRepo.GetBySpecialistWithInfo(specialistId);
+        specialistServices = efRepo.GetAllWithSpecialistInfo()
+            .Where(s => s.SpecialistId == specialistId || s.SpecialistId == null)
+            .ToList();
     }
     else
     {
-        // Fallback: filter to only services for this specialist
         specialistServices = repository.GetBySpecialist(specialistId)
-            .Where(s => s.SpecialistId == specialistId) // Only services for this specialist
             .Select(s => new ServiceResponse
             {
                 Id = s.Id,
@@ -673,7 +672,7 @@ services.MapGet("/by-specialist/{specialistId:guid}", (Guid specialistId, IServi
                 Price = s.Price,
                 Description = s.Description,
                 SpecialistId = s.SpecialistId,
-                SpecialistDisplayName = null, // Would need to query if not using EF
+                SpecialistDisplayName = null,
                 CreatedByUserId = s.CreatedByUserId,
                 CreatedByDisplayName = null,
                 CreatedAt = s.CreatedAt
@@ -758,18 +757,17 @@ services.MapGet("/my-services", (HttpContext context, IServiceRepository service
     var user = userRepo.GetById(userId.Value);
     if (user == null || !user.IsSpecialist) return Results.Forbid();
 
-    // Get services ONLY for this specialist (userId is now the specialistId since they're merged)
+    // Get services for this specialist (userId is now the specialistId since they're merged)
     List<ServiceResponse> myServices;
     if (serviceRepo is EfServiceRepository efRepo)
     {
-        // Use the optimized method that only returns services for this specific specialist
-        myServices = efRepo.GetBySpecialistWithInfo(userId.Value);
+        myServices = efRepo.GetAllWithSpecialistInfo()
+            .Where(s => s.SpecialistId == userId.Value)
+            .ToList();
     }
     else
     {
-        // Fallback: filter to only services for this specialist
         myServices = serviceRepo.GetBySpecialist(userId.Value)
-            .Where(s => s.SpecialistId == userId.Value) // Ensure only this specialist's services
             .Select(s => new ServiceResponse
             {
                 Id = s.Id,
@@ -807,16 +805,13 @@ services.MapPost("/my-services", (CreateServiceRequest request, HttpContext cont
     if (request.DurationMinutes <= 0)
         return Results.BadRequest(new { message = "Duration must be greater than 0." });
 
-    // IMPORTANT: Specialists can ONLY create services for themselves
-    // The SpecialistId is hardcoded to the logged-in user's ID - there is no way to create services for other specialists
-    
     // Check for duplicate service name for this specialist
     var existingServices = serviceRepo.GetBySpecialist(userId.Value);
     if (existingServices.Any(s => s.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase) && s.SpecialistId == userId.Value))
         return Results.BadRequest(new { message = "You already have a service with this name." });
 
-    // Create service linked to this specialist ONLY (userId is hardcoded as both SpecialistId and CreatedByUserId)
-    // This ensures specialists can only add services unique to them
+    // Create service linked to this specialist (userId is now the specialistId)
+    // CreatedByUserId is also userId (the specialist creating their own service)
     var service = serviceRepo.Add(request.Name, request.Category, request.DurationMinutes, request.Price, request.Description, userId.Value, userId.Value);
     
     // Return service with full information including display names
