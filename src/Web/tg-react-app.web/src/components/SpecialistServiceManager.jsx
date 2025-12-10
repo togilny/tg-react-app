@@ -20,6 +20,19 @@ export default function SpecialistServiceManager() {
 
   useEffect(() => {
     loadServices();
+    
+    // Listen for custom event to open add service form
+    const handleOpenAddService = () => {
+      setShowForm(true);
+      setEditingService(null);
+      resetForm();
+    };
+    
+    window.addEventListener('openAddServiceForm', handleOpenAddService);
+    
+    return () => {
+      window.removeEventListener('openAddServiceForm', handleOpenAddService);
+    };
   }, []);
 
   const loadServices = async () => {
@@ -101,9 +114,9 @@ export default function SpecialistServiceManager() {
   return (
     <div className="admin-panel">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2>My Services</h2>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: '600' }}>My Services</h2>
         {!showForm && (
-          <button onClick={() => setShowForm(true)} className="btn-save">
+          <button onClick={() => setShowForm(true)} className="btn-save" style={{ fontSize: '1rem', padding: '0.5rem 1rem', fontWeight: '600' }}>
             + Add Service
           </button>
         )}
@@ -192,11 +205,11 @@ export default function SpecialistServiceManager() {
             </div>
           ) : (
             services.map(service => (
-              <div key={service.id} className="admin-list-item">
+              <div key={service.id} id={`service-${service.id}`} className="admin-list-item">
                 <div className="admin-list-item-header">
                   <div>
-                    <h4>{service.name}</h4>
-                    <p style={{ color: '#a1a1aa', margin: '0.25rem 0' }}>
+                    <h4 style={{ fontSize: '1.1rem', fontWeight: '600' }}>{service.name}</h4>
+                    <p style={{ color: '#a1a1aa', margin: '0.25rem 0', fontSize: '0.95rem' }}>
                       {service.category} • {service.durationMinutes} min • £{service.price.toFixed(2)}
                     </p>
                     {service.description && (
@@ -206,10 +219,10 @@ export default function SpecialistServiceManager() {
                     )}
                   </div>
                   <div className="admin-list-item-actions">
-                    <button onClick={() => handleEdit(service)} className="btn-edit">
+                    <button onClick={() => handleEdit(service)} className="btn-edit" style={{ fontSize: '0.9rem', padding: '0.4rem 0.75rem', fontWeight: '500' }}>
                       Edit
                     </button>
-                    <button onClick={() => handleDelete(service.id)} className="btn-delete">
+                    <button onClick={() => handleDelete(service.id)} className="btn-delete" style={{ fontSize: '0.9rem', padding: '0.4rem 0.75rem', fontWeight: '500' }}>
                       Delete
                     </button>
                   </div>

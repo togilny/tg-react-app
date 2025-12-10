@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchMyProfile, updateSpecialist, deleteSpecialist } from '../services/specialistApi';
 import { fetchMyProfile as fetchUserProfile, updateMyProfile } from '../services/authApi';
-import { fetchMyServices } from '../services/serviceApi';
+import { fetchMyServices, updateMyService, deleteMyService } from '../services/serviceApi';
 
 export default function SpecialistProfileManager() {
   const [specialist, setSpecialist] = useState(null);
@@ -45,6 +45,45 @@ export default function SpecialistProfileManager() {
       console.error('Error loading services:', err);
       setServices([]);
     }
+  };
+
+  const handleDeleteService = async (serviceId) => {
+    if (!confirm('Are you sure you want to delete this service?')) return;
+    
+    try {
+      await deleteMyService(serviceId);
+      await loadServices();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleEditService = (service) => {
+    // Scroll to the service management section and highlight the service
+    setTimeout(() => {
+      const serviceCard = document.getElementById(`service-${service.id}`);
+      if (serviceCard) {
+        serviceCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Highlight the card briefly
+        serviceCard.style.background = '#3f3f46';
+        setTimeout(() => {
+          serviceCard.style.background = '';
+        }, 2000);
+        // Try to click the edit button
+        setTimeout(() => {
+          const editButton = serviceCard.querySelector('.btn-edit');
+          if (editButton) {
+            editButton.click();
+          }
+        }, 500);
+      } else {
+        // If service card not found, just scroll to service management section
+        const serviceSection = document.querySelector('.admin-panel');
+        if (serviceSection) {
+          serviceSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }, 100);
   };
 
   const loadUserProfile = async () => {
@@ -386,7 +425,7 @@ export default function SpecialistProfileManager() {
             </div>
             <div className="specialist-admin-actions">
               <button onClick={handleEdit} className="btn-edit">
-                Edit
+                <strong>Edit</strong>
               </button>
               <button onClick={handleDelete} className="btn-delete">
                 Delete
@@ -394,42 +433,81 @@ export default function SpecialistProfileManager() {
             </div>
             
             {/* Services list below specialist card */}
-            {services.length > 0 && (
-              <div style={{ 
-                marginTop: '1rem', 
-                paddingTop: '1rem', 
-                borderTop: '1px solid #3f3f46',
-                width: '100%'
-              }}>
-                <h5 style={{ marginBottom: '0.75rem', color: '#e4e4e7', fontSize: '0.9rem' }}>
+            <div style={{ 
+              marginTop: '1rem', 
+              paddingTop: '1rem', 
+              borderTop: '1px solid #3f3f46',
+              width: '100%'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <h5 style={{ margin: 0, color: '#e4e4e7', fontSize: '1.1rem', fontWeight: '600' }}>
                   My Services:
                 </h5>
+                <button 
+                  onClick={() => {
+                    // Dispatch custom event to trigger add service form
+                    window.dispatchEvent(new CustomEvent('openAddServiceForm'));
+                    // Scroll to service management section
+                    setTimeout(() => {
+                      const serviceSection = document.querySelector('.admin-panel');
+                      if (serviceSection) {
+                        serviceSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }, 100);
+                  }}
+                  className="btn-primary"
+                  style={{ fontSize: '0.95rem', padding: '0.5rem 1rem', fontWeight: '600' }}
+                >
+                  + Add Service
+                </button>
+              </div>
+              {services.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {services.map((service) => (
                     <div key={service.id} style={{
-                      padding: '0.5rem',
+                      padding: '0.75rem',
                       background: '#27272a',
                       borderRadius: '0.375rem',
-                      fontSize: '0.85rem'
+                      fontSize: '0.9rem'
                     }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <strong style={{ color: '#e4e4e7' }}>{service.name}</strong>
-                          <span style={{ color: '#a1a1aa', marginLeft: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div style={{ flex: 1 }}>
+                          <strong style={{ color: '#e4e4e7', fontSize: '0.95rem' }}>{service.name}</strong>
+                          <span style={{ color: '#a1a1aa', marginLeft: '0.5rem', fontSize: '0.9rem' }}>
                             {service.category} • {service.durationMinutes} min • £{service.price.toFixed(2)}
                           </span>
                         </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button 
+                            onClick={() => handleEditService(service)}
+                            className="btn-edit"
+                            style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem', fontWeight: '600' }}
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteService(service.id)}
+                            className="btn-delete"
+                            style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem', fontWeight: '600' }}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                       {service.description && (
-                        <p style={{ color: '#71717a', marginTop: '0.25rem', fontSize: '0.8rem' }}>
+                        <p style={{ color: '#71717a', marginTop: '0.25rem', fontSize: '0.85rem' }}>
                           {service.description}
                         </p>
                       )}
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p style={{ color: '#a1a1aa', fontSize: '0.95rem', fontStyle: 'italic' }}>
+                  No services yet. Click "Add Service" to create your first service.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}
