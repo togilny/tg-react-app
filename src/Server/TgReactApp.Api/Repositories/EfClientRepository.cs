@@ -154,10 +154,10 @@ public class EfClientRepository : IClientRepository
         }
         
         // If registered user, just clear client fields
-        user.Name = null!;
-        user.Email = null!;
-        user.Phone = null!;
-        user.Notes = null!;
+        user.Name = null;
+        user.Email = null;
+        user.Phone = null;
+        user.Notes = null;
         _context.SaveChanges();
         return true;
     }

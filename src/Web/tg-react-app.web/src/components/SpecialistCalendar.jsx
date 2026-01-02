@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { fetchMyAppointments } from '../services/specialistApi';
 
 export default function SpecialistCalendar() {
+  console.log('SpecialistCalendar component mounted');
   const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'confirmed', 'cancelled'
 
   useEffect(() => {
+    console.log('useEffect running - loading appointments');
     loadAppointments();
   }, []);
 
@@ -74,9 +76,21 @@ export default function SpecialistCalendar() {
 
   const getStatusBadge = (status) => {
     const styles = {
-      Confirmed: 'background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3)',
-      Cancelled: 'background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3)',
-      Completed: 'background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3)'
+      Confirmed: {
+        background: 'rgba(34, 197, 94, 0.2)',
+        color: '#22c55e',
+        border: '1px solid rgba(34, 197, 94, 0.3)'
+      },
+      Cancelled: {
+        background: 'rgba(239, 68, 68, 0.2)',
+        color: '#ef4444',
+        border: '1px solid rgba(239, 68, 68, 0.3)'
+      },
+      Completed: {
+        background: 'rgba(59, 130, 246, 0.2)',
+        color: '#3b82f6',
+        border: '1px solid rgba(59, 130, 246, 0.3)'
+      }
     };
 
     return (
@@ -123,7 +137,7 @@ export default function SpecialistCalendar() {
   if (isLoading) {
     return (
       <div style={{ textAlign: 'center', padding: '3rem', color: 'rgba(255,255,255,0.6)' }}>
-        <div className="spinner"></div>
+        <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
         <p style={{ marginTop: '1rem' }}>Loading your appointments...</p>
       </div>
     );
@@ -132,13 +146,29 @@ export default function SpecialistCalendar() {
   if (error) {
     return (
       <div style={{ 
-        padding: '1.5rem', 
+        padding: '2rem', 
         background: 'rgba(239, 68, 68, 0.1)', 
         border: '1px solid rgba(239, 68, 68, 0.3)',
         borderRadius: '8px',
-        color: '#ef4444'
+        color: '#ef4444',
+        textAlign: 'center'
       }}>
-        ⚠️ {error}
+        <h3 style={{ marginBottom: '1rem' }}>⚠️ Error Loading Appointments</h3>
+        <p>{error}</p>
+        <button 
+          onClick={loadAppointments}
+          style={{
+            marginTop: '1rem',
+            padding: '0.65rem 1.5rem',
+            background: 'rgba(59, 130, 246, 0.25)',
+            border: '2px solid #3b82f6',
+            borderRadius: '8px',
+            color: '#3b82f6',
+            cursor: 'pointer'
+          }}
+        >
+          Try Again
+        </button>
       </div>
     );
   }
@@ -147,8 +177,10 @@ export default function SpecialistCalendar() {
   const totalConfirmed = appointments.filter(a => a.status === 'Confirmed').length;
   const totalCancelled = appointments.filter(a => a.status === 'Cancelled').length;
 
+  console.log('About to render. Appointments:', appointments.length, 'Grouped:', groupedAppointments.length, 'Loading:', isLoading, 'Error:', error);
+
   return (
-    <div className="specialist-calendar">
+    <div className="specialist-calendar" style={{ width: '100%', minHeight: '400px', padding: '1rem' }}>
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
