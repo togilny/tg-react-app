@@ -12,9 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 
-// Configure Entity Framework with SQL Server LocalDB
+// Configure Entity Framework with PostgreSQL
 builder.Services.AddDbContext<GlowBookDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var allowedOrigins = builder.Configuration
     .GetSection("AllowedOrigins")
