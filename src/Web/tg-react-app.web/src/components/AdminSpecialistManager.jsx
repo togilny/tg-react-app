@@ -13,6 +13,11 @@ export default function AdminSpecialistManager() {
   const [editingSpecialist, setEditingSpecialist] = useState(null);
   const [imageErrors, setImageErrors] = useState({});
   const [logoPreview, setLogoPreview] = useState(null);
+
+  const [accountData, setAccountData] = useState({
+    username: '',
+    tempPassword: ''
+  });
   
   const [formData, setFormData] = useState({
     name: '',
@@ -62,12 +67,21 @@ export default function AdminSpecialistManager() {
       if (editingSpecialist) {
         await updateSpecialist(editingSpecialist.id, formData);
       } else {
-        await createSpecialist(formData);
+        const response = await createSpecialist({
+          ...formData,
+          username: accountData.username,
+          tempPassword: accountData.tempPassword
+        });
+
+        if (response?.username && response?.tempPassword) {
+          alert(`Specialist user created.\n\nUsername: ${response.username}\nTemp password: ${response.tempPassword}`);
+        }
       }
       
       setShowForm(false);
       setEditingSpecialist(null);
       setFormData({ name: '', category: 'Hair', description: '', imageUrl: '', pricePerHour: 50, rating: 5 });
+      setAccountData({ username: '', tempPassword: '' });
       await loadSpecialists();
     } catch (err) {
       setError(err.message);
@@ -84,6 +98,7 @@ export default function AdminSpecialistManager() {
       pricePerHour: specialist.pricePerHour,
       rating: specialist.rating
     });
+    setAccountData({ username: '', tempPassword: '' });
     setLogoPreview(specialist.imageUrl || null);
     setShowForm(true);
   };
@@ -103,6 +118,7 @@ export default function AdminSpecialistManager() {
     setShowForm(false);
     setEditingSpecialist(null);
     setFormData({ name: '', category: 'Hair', description: '', imageUrl: '', pricePerHour: 50, rating: 5 });
+    setAccountData({ username: '', tempPassword: '' });
     setLogoPreview(null);
   };
 
@@ -141,9 +157,35 @@ export default function AdminSpecialistManager() {
       {showForm && (
         <form onSubmit={handleSubmit} className="service-form card">
           <h3>{editingSpecialist ? 'Edit Specialist' : 'Add New Specialist'}</h3>
+
+          {!editingSpecialist && (
+            <>
+              <div className="form-group">
+                <label>Username *</label>
+                <input
+                  type="text"
+                  value={accountData.username}
+                  onChange={(e) => setAccountData({ ...accountData, username: e.target.value })}
+                  placeholder="e.g., Sarah21"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Temp Password *</label>
+                <input
+                  type="text"
+                  value={accountData.tempPassword}
+                  onChange={(e) => setAccountData({ ...accountData, tempPassword: e.target.value })}
+                  placeholder="Set a temporary password"
+                  required
+                />
+              </div>
+            </>
+          )}
           
           <div className="form-group">
-            <label>Name *</label>
+            <label>First Name & Surname *</label>
             <input
               type="text"
               value={formData.name}

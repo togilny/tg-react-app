@@ -24,7 +24,7 @@ public class EfUserRepository : IUserRepository
         return _context.Users.Find(id);
     }
 
-    public User Create(string username, string passwordHash, string? displayName = null, bool isSpecialist = false)
+    public User Create(string username, string passwordHash, string? displayName = null, bool isSpecialist = false, bool mustChangePassword = false)
     {
         // First user is admin, or username "tony" is admin
         var isAdmin = !_context.Users.Any() || username.Equals("tony", StringComparison.OrdinalIgnoreCase);
@@ -37,6 +37,7 @@ public class EfUserRepository : IUserRepository
             DisplayName = displayName,
             IsAdmin = isAdmin,
             IsSpecialist = isSpecialist,
+            MustChangePassword = mustChangePassword,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -46,7 +47,7 @@ public class EfUserRepository : IUserRepository
         return user;
     }
 
-    public User? Update(Guid id, string? username = null, string? displayName = null, string? passwordHash = null)
+    public User? Update(Guid id, string? username = null, string? displayName = null, string? passwordHash = null, bool? mustChangePassword = null)
     {
         var user = GetById(id);
         if (user == null) return null;
@@ -64,6 +65,11 @@ public class EfUserRepository : IUserRepository
         if (!string.IsNullOrWhiteSpace(passwordHash))
         {
             user.PasswordHash = passwordHash;
+        }
+
+        if (mustChangePassword.HasValue)
+        {
+            user.MustChangePassword = mustChangePassword.Value;
         }
 
         _context.SaveChanges();

@@ -14,15 +14,22 @@ import SpecialistProfileManager from './components/SpecialistProfileManager.jsx'
 import UserProfileManager from './components/UserProfileManager.jsx';
 import { fetchSpecialists } from './services/specialistApi.js';
 import { fetchBookings, createBooking, cancelBooking } from './services/bookingApi.js';
+import { Button, IconButton, Menu, MenuItem, Typography } from '@mui/material';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import { useThemeMode } from './contexts/ThemeModeContext.jsx';
 
-function GlowBookApp() {
+function LookBookApp() {
   const { user, logout } = useAuth();
+  const { mode, toggleMode } = useThemeMode();
   const [specialists, setSpecialists] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedSpecialist, setSelectedSpecialist] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+
+  const [settingsAnchorEl, setSettingsAnchorEl] = useState(null);
+  const isSettingsOpen = Boolean(settingsAnchorEl);
   
   // Set default view based on user type
   const [currentView, setCurrentView] = useState(() => {
@@ -98,27 +105,54 @@ function GlowBookApp() {
   };
 
   return (
-    <div className="app-shell glowbook-app">
+    <div className="app-shell lookbook-app min-h-screen flex flex-col bg-app-bg text-app-text">
       <header>
         <div className="header-content">
           <div className="logo-section">
-            <img src="/GB-Logo-White.png" alt="GlowBook" className="app-logo" />
-            <p className="subtitle">Book your Look</p>
+            <h1 className="lookbook-title">LookBook</h1>
           </div>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <button 
-              onClick={() => setShowProfileModal(true)} 
-              className="btn-profile"
-              title="My Profile"
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+              {user?.username}
+            </Typography>
+
+            <IconButton
+              aria-label="Settings"
+              onClick={(e) => setSettingsAnchorEl(e.currentTarget)}
+              size="small"
+              sx={{ border: '1px solid', borderColor: 'divider' }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" fill="currentColor"/>
-                <path d="M12 14C7.58172 14 4 16.6863 4 20C4 20.5523 4.44772 21 5 21H19C19.5523 21 20 20.5523 20 20C20 16.6863 16.4183 14 12 14Z" fill="currentColor"/>
-              </svg>
-            </button>
-            <button onClick={logout} className="btn-logout">
-              Logout
-            </button>
+              <SettingsOutlinedIcon fontSize="small" />
+            </IconButton>
+
+            <Menu
+              anchorEl={settingsAnchorEl}
+              open={isSettingsOpen}
+              onClose={() => setSettingsAnchorEl(null)}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+              <MenuItem
+                onClick={() => {
+                  setSettingsAnchorEl(null);
+                  setShowProfileModal(true);
+                }}
+              >
+                My profile
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  toggleMode();
+                  setSettingsAnchorEl(null);
+                }}
+              >
+                {mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              </MenuItem>
+            </Menu>
+
+            <Button variant="outlined" color="inherit" onClick={logout} sx={{ borderColor: 'divider' }}>
+              Sign out
+            </Button>
           </div>
         </div>
       </header>
@@ -129,14 +163,16 @@ function GlowBookApp() {
             className={`tab ${currentView === 'specialists' ? 'active' : ''}`}
             onClick={() => setCurrentView('specialists')}
           >
-            Browse Specialists
+            <span className="tab-icon">🔍</span>
+            <span className="tab-text">Specialists</span>
           </button>
         ) : null}
         <button
           className={`tab ${currentView === 'mybookings' ? 'active' : ''}`}
           onClick={() => setCurrentView('mybookings')}
         >
-          My Bookings {bookings.filter(b => b.status === 'Confirmed').length > 0 && `(${bookings.filter(b => b.status === 'Confirmed').length})`}
+          <span className="tab-icon">📋</span>
+          <span className="tab-text">Bookings {bookings.filter(b => b.status === 'Confirmed').length > 0 && `(${bookings.filter(b => b.status === 'Confirmed').length})`}</span>
         </button>
         {user.isSpecialist && (
           <>
@@ -144,13 +180,15 @@ function GlowBookApp() {
               className={`tab ${currentView === 'my-services' ? 'active' : ''}`}
               onClick={() => setCurrentView('my-services')}
             >
-              🛠️ My Services
+              <span className="tab-icon">🛠️</span>
+              <span className="tab-text">Services</span>
             </button>
             <button
               className={`tab ${currentView === 'client-bookings' ? 'active' : ''}`}
               onClick={() => setCurrentView('client-bookings')}
             >
-              📅 Client Bookings
+              <span className="tab-icon">📅</span>
+              <span className="tab-text">Clients</span>
             </button>
           </>
         )}
@@ -161,14 +199,16 @@ function GlowBookApp() {
                 className={`tab ${currentView === 'admin-specialists' ? 'active' : ''}`}
                 onClick={() => setCurrentView('admin-specialists')}
               >
-                💼 Specialists
+                <span className="tab-icon">💼</span>
+                <span className="tab-text">Specialists</span>
               </button>
             )}
             <button
               className={`tab ${currentView === 'admin-clients' ? 'active' : ''}`}
               onClick={() => setCurrentView('admin-clients')}
             >
-              👥 Clients
+              <span className="tab-icon">👥</span>
+              <span className="tab-text">Clients</span>
             </button>
           </>
         )}
@@ -359,7 +399,7 @@ function AppContent() {
     );
   }
 
-  return user ? <GlowBookApp /> : <AuthScreen />;
+  return user ? <LookBookApp /> : <AuthScreen />;
 }
 
 export default function App() {

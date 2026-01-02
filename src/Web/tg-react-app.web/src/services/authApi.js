@@ -25,7 +25,9 @@ const request = async (path, options = {}) => {
   if (!response.ok) {
     const payload = await toJson(response);
     const message = payload?.message ?? `Request failed (${response.status})`;
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
 
   return toJson(response);

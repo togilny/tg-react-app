@@ -13,6 +13,8 @@ public class GlowBookDbContext : DbContext
     public DbSet<Service> Services { get; set; }
     public DbSet<Booking> Bookings { get; set; }
     public DbSet<ClientServicePrice> ClientServicePrices { get; set; }
+    public DbSet<SpecialistOffDay> SpecialistOffDays { get; set; }
+    public DbSet<SpecialistBreak> SpecialistBreaks { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -73,6 +75,23 @@ public class GlowBookDbContext : DbContext
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.ClientId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne<Service>().WithMany().HasForeignKey(e => e.ServiceId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.ClientId, e.ServiceId }).IsUnique();
+        });
+
+        // SpecialistOffDay configuration
+        modelBuilder.Entity<SpecialistOffDay>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.SpecialistId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.SpecialistId, e.Date }).IsUnique();
+        });
+
+        // SpecialistBreak configuration
+        modelBuilder.Entity<SpecialistBreak>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.SpecialistId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

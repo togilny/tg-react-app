@@ -1,9 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color: #e4e4e7;
-  background-color: #1e1e1e;
+  font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.6;
+  font-weight: 500;
+  color: var(--text-primary);
+  background-color: var(--bg-900);
+  --bg-900: #0f141c;
+  --bg-850: #131a24;
+  --bg-800: #161f2b;
+  --panel: #1b2331;
+  --panel-strong: #1f2735;
+  --panel-soft: #1b2433;
+  --border: #2a3344;
+  --border-strong: #343f52;
+  --text-muted: #9aa3b5;
+  --text-primary: #e7ecf8;
+  --text-heading: #f8fafc;
+  --accent: #4ea1ff;
+  --accent-2: #8aa5c7;
+  --success: #3fbf7f;
+  --warning: #f5c451;
+  --danger: #e46a6a;
+}
+
+html[data-theme='light'] {
+  --bg-900: #f8fafc;
+  --bg-850: #f1f5f9;
+  --bg-800: #eaf0f7;
+  --panel: #ffffff;
+  --panel-strong: #ffffff;
+  --panel-soft: #ffffff;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text-muted: #475569;
+  --text-primary: #0f172a;
+  --text-heading: #0f172a;
+}
+
+html[data-theme='light'] .app-logo,
+html[data-theme='light'] .auth-logo-img {
+  filter: invert(1);
+}
+
+/* Light mode: LookBook title */
+html[data-theme='light'] .lookbook-title {
+  color: #0f172a;
+}
+
+/* Light mode: Tab styles */
+html[data-theme='light'] .tab {
+  color: #475569;
+  background: transparent;
+}
+
+html[data-theme='light'] .tab:hover {
+  color: #0f172a;
+  background: #e2e8f0;
+}
+
+html[data-theme='light'] .tab.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  background: #dbeafe;
+}
+
+/* Light mode: Headings */
+html[data-theme='light'] h2,
+html[data-theme='light'] h3 {
+  color: #0f172a;
+}
+
+html[data-theme='light'] .admin-panel h2,
+html[data-theme='light'] .admin-panel h3 {
+  color: #0f172a;
 }
 
 * {
@@ -13,7 +87,8 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: #1e1e1e;
+  background: var(--bg-900);
+  color: var(--text-primary);
 }
 
 .app-shell {
@@ -24,18 +99,19 @@ body {
 
 .content {
   flex: 1;
-  width: min(960px, 100%);
+  width: min(1100px, 100%);
   margin: 0 auto;
   padding: 2rem 1.5rem 3rem;
 }
 
 header {
   padding: 2.5rem 1.5rem 1rem;
-  text-align: center;
+  text-align: left;
 }
 
 .header-content {
-  max-width: 960px;
+  max-width: 1100px;
+  width: 100%;
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
@@ -46,13 +122,27 @@ header {
 h1 {
   margin: 0 0 0.5rem;
   font-size: clamp(1.8rem, 3vw, 2.5rem);
-  color: #ffffff;
+  color: var(--text-heading);
+  letter-spacing: -0.02em;
+}
+
+.lookbook-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.auth-logo .lookbook-title {
+  font-size: 2rem;
+  text-align: center;
 }
 
 .logo-section {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
 }
 
@@ -98,17 +188,18 @@ h2 {
 }
 
 .subtitle {
-  color: #ffffff;
+  color: var(--text-muted);
   font-weight: 600;
   margin: 0;
+  letter-spacing: 0.01em;
 }
 
 .card {
-  background: #2a2a2a;
+  background: var(--panel);
   border-radius: 1rem;
   padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  border: 1px solid #3f3f46;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--border);
   margin-bottom: 2rem;
 }
 
@@ -126,18 +217,18 @@ h2 {
 }
 
 .auth-form {
-  background: #2a2a2a;
+  background: var(--panel);
   border-radius: 1rem;
   padding: 2.5rem;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-  border: 1px solid #3f3f46;
+  border: 1px solid var(--border);
 }
 
 .auth-form h2 {
   text-align: center;
   margin-bottom: 1.5rem;
   font-size: 1.75rem;
-  color: #ffffff;
+  color: var(--text-heading);
 }
 
 .form-group {
@@ -149,7 +240,7 @@ h2 {
   margin-bottom: 0.5rem;
   font-weight: 600;
   font-size: 0.9rem;
-  color: #e4e4e7;
+  color: var(--text-heading);
 }
 
 .error-message {
@@ -165,7 +256,7 @@ h2 {
 .auth-switch {
   text-align: center;
   margin-top: 1.5rem;
-  color: #a1a1aa;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -511,7 +602,7 @@ button[type="submit"] {
 button[type="submit"]:not(:disabled):hover {
   background: #1d4ed8;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  box-shadow: none;
 }
 
 .btn-edit {
@@ -522,7 +613,7 @@ button[type="submit"]:not(:disabled):hover {
 .btn-edit:hover {
   background: #2563eb;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: none;
 }
 
 .btn-delete {
@@ -533,7 +624,7 @@ button[type="submit"]:not(:disabled):hover {
 .btn-delete:hover {
   background: #b91c1c;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+  box-shadow: none;
 }
 
 .btn-save {
@@ -544,7 +635,7 @@ button[type="submit"]:not(:disabled):hover {
 .btn-save:hover {
   background: #15803d;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+  box-shadow: none;
 }
 
 .btn-cancel {
@@ -555,7 +646,7 @@ button[type="submit"]:not(:disabled):hover {
 .btn-cancel:hover {
   background: #3f3f46;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(82, 82, 91, 0.4);
+  box-shadow: none;
 }
 
 .empty-state {
@@ -564,27 +655,32 @@ button[type="submit"]:not(:disabled):hover {
   color: #71717a;
 }
 
-input,
-textarea {
+/*
+  Legacy (non-MUI) form controls.
+  MUI renders real <input> elements too, so we explicitly exclude any element
+  whose class contains "Mui" to avoid overriding MUI component styling.
+*/
+input:not([class*='Mui']),
+textarea:not([class*='Mui']) {
   border-radius: 0.65rem;
-  border: 1px solid #3f3f46;
-  background: #1e1e1e;
-  color: #e4e4e7;
+  border: 1px solid var(--border-strong);
+  background: var(--panel-strong);
+  color: var(--text-primary);
   padding: 0.65rem 0.85rem;
   font-size: 1rem;
   font-family: inherit;
 }
 
-input::placeholder,
-textarea::placeholder {
-  color: #71717a;
+input:not([class*='Mui'])::placeholder,
+textarea:not([class*='Mui'])::placeholder {
+  color: var(--text-muted);
 }
 
-input:focus,
-textarea:focus {
+input:not([class*='Mui']):focus,
+textarea:not([class*='Mui']):focus {
   outline: none;
-  border-color: #60a5fa;
-  background: #262626;
+  border-color: var(--accent);
+  background: var(--panel);
 }
 
 @media (max-width: 640px) {
@@ -611,9 +707,9 @@ textarea:focus {
   }
 }
 
-/* GlowBook Booking Styles */
+/* LookBook Booking Styles */
 
-.glowbook-app header {
+.lookbook-app header {
   background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
   border-bottom: 1px solid #3f3f46;
 }
@@ -632,7 +728,7 @@ textarea:focus {
 
 .tab {
   flex: 1;
-  padding: 1rem;
+  padding: 0.6rem 1rem;
   background: none;
   border: none;
   border-bottom: 3px solid transparent;
@@ -640,6 +736,7 @@ textarea:focus {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 0.9rem;
 }
 
 .tab:hover {
@@ -697,15 +794,15 @@ textarea:focus {
   align-items: center;
   gap: 1rem;
   padding: 1.25rem;
-  background: #1e1e1e;
-  border: 1px solid #3f3f46;
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
   border-radius: 1rem;
   transition: all 0.2s ease;
 }
 
 .specialist-card:hover {
-  border-color: #60a5fa;
-  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
+  border-color: var(--border-strong);
+  box-shadow: none;
 }
 
 .specialist-icon {
@@ -768,7 +865,7 @@ textarea:focus {
 .btn-book:hover {
   background: #059669;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  box-shadow: none;
 }
 
 /* Booking Modal */
@@ -1086,7 +1183,7 @@ textarea:focus {
 .btn-primary:hover {
   background: #1d4ed8;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  box-shadow: none;
 }
 
 .service-form {
@@ -1115,21 +1212,21 @@ textarea:focus {
   flex: 1;
 }
 
-select {
+select:not([class*='Mui']) {
   border-radius: 0.65rem;
-  border: 1px solid #3f3f46;
-  background: #1e1e1e;
-  color: #e4e4e7;
+  border: 1px solid var(--border-strong);
+  background: var(--panel-strong);
+  color: var(--text-primary);
   padding: 0.65rem 0.85rem;
   font-size: 1rem;
   font-family: inherit;
   width: 100%;
 }
 
-select:focus {
+select:not([class*='Mui']):focus {
   outline: none;
-  border-color: #60a5fa;
-  background: #262626;
+  border-color: var(--accent);
+  background: var(--panel);
 }
 
 .services-grid {
@@ -1148,7 +1245,7 @@ select:focus {
 
 .service-card:hover {
   border-color: #60a5fa;
-  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
+  box-shadow: none;
 }
 
 .service-card-header {
@@ -1277,7 +1374,7 @@ select:focus {
 
 .client-card:hover {
   border-color: #60a5fa;
-  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
+  box-shadow: none;
 }
 
 .client-card h4 {
@@ -1459,7 +1556,7 @@ select:focus {
 
 .specialist-admin-card:hover {
   border-color: #60a5fa;
-  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
+  box-shadow: none;
 }
 
 .specialist-admin-icon {
@@ -1500,5 +1597,699 @@ select:focus {
 @media (max-width: 640px) {
   .specialists-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* --- Modern dashboard theme overrides --- */
+.lookbook-app header {
+  background: linear-gradient(135deg, var(--bg-850), var(--bg-900));
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+.header-content {
+  max-width: 1100px;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border-radius: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  backdrop-filter: none;
+}
+
+.view-tabs {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+  margin: 0 auto 1.5rem;
+  max-width: 1100px;
+  width: 100%;
+  box-shadow: none;
+}
+
+.tab {
+  border-radius: 0.4rem;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0.01em;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.9rem;
+}
+
+.tab:hover {
+  border-color: var(--border);
+  background: var(--panel-strong);
+}
+
+.tab.active {
+  color: #e7ecf8;
+  border-color: var(--accent);
+  background: rgba(78, 161, 255, 0.16);
+  box-shadow: none;
+}
+
+html[data-theme='light'] .lookbook-app .tab.active {
+  color: #1e40af;
+  border-color: #2563eb;
+  background: #dbeafe;
+}
+
+html[data-theme='light'] .lookbook-app .tab {
+  color: #475569;
+}
+
+html[data-theme='light'] .lookbook-app .tab:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+.tab:hover,
+.category-btn:hover,
+.btn-primary:hover,
+.btn-book:hover,
+button[type="submit"]:not(:disabled):hover,
+.btn-save:hover,
+.btn-confirm:hover,
+.btn-logout:hover,
+.btn-delete:hover,
+.btn-delete-small:hover,
+.btn-cancel:hover {
+  filter: brightness(0.96);
+  transform: translateY(-1px);
+}
+
+.category-btn {
+  background: var(--panel-strong);
+  border-color: var(--border);
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+.category-btn.active {
+  background: #2d3a4f;
+  border-color: var(--accent);
+  color: #e7ecf8;
+  box-shadow: none;
+}
+
+button {
+  border-radius: 0.75rem;
+  font-weight: 600;
+}
+
+button[type="submit"],
+.btn-primary,
+.btn-book {
+  background: var(--accent);
+  color: #0f141c;
+  border: 1px solid var(--accent);
+  box-shadow: none;
+}
+
+.btn-logout,
+.btn-delete,
+.btn-delete-small {
+  background: #2c1f23;
+  border: 1px solid var(--danger);
+  color: #f5c7c7;
+  box-shadow: none;
+}
+
+.btn-save,
+.btn-confirm {
+  background: var(--success);
+  border: 1px solid var(--success);
+  color: #0f141c;
+  box-shadow: none;
+}
+
+.btn-cancel {
+  background: #232c3d;
+  border: 1px solid #232c3d;
+  color: #e7ecf8;
+}
+
+input,
+textarea,
+select,
+.time-slot {
+  background: var(--panel-strong);
+  border-color: var(--border);
+  color: #e7ecf8;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+.time-slot.selected {
+  border-color: rgba(34, 211, 238, 0.5);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.2);
+}
+
+.card,
+.specialist-card,
+.booking-item,
+.service-card,
+.client-card,
+.price-item,
+.specialist-admin-card,
+.modal-content,
+.time-slot,
+.toggle-btn,
+.service-form,
+.price-form {
+  background: var(--panel-strong);
+  border-color: var(--border);
+}
+
+.booking-status {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  letter-spacing: 0.04em;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.status-confirmed {
+  background: rgba(34, 197, 94, 0.14);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.status-cancelled {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.status-completed {
+  background: rgba(59, 130, 246, 0.14);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.45);
+}
+
+.modal-header,
+.booking-actions,
+.client-actions,
+.service-actions {
+  border-color: var(--border);
+}
+
+.toggle-btn.active {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(168, 85, 247, 0.15));
+  border-color: rgba(34, 211, 238, 0.45);
+  color: #e7ecf8;
+}
+
+.specialist-category {
+  color: #7dd3fc;
+}
+
+.specialist-price,
+.service-price,
+.price-item p {
+  color: #9ef0c0;
+}
+
+.booking-date,
+.specialist-description,
+.service-description,
+.client-email,
+.client-phone,
+.client-notes,
+.slot-info,
+.info-message,
+.subtitle {
+  color: var(--text-muted);
+}
+
+.empty-state {
+  color: #7b8497;
+}
+/* React Calendar Styles */
+.calendar-container {
+  margin: 0.5rem 0;
+}
+
+.react-calendar {
+  width: 100%;
+  max-width: 400px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  font-family: inherit;
+  line-height: 1.5;
+  padding: 0.5rem;
+}
+
+.react-calendar__navigation {
+  display: flex;
+  height: 44px;
+  margin-bottom: 0.5rem;
+}
+
+.react-calendar__navigation button {
+  background: none;
+  border: none;
+  color: var(--text-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.react-calendar__navigation button:hover {
+  background: var(--bg-800);
+}
+
+.react-calendar__navigation button:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.react-calendar__month-view__weekdays {
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  padding: 0.5rem;
+}
+
+.react-calendar__month-view__weekdays__weekday abbr {
+  text-decoration: none;
+}
+
+.react-calendar__tile {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  padding: 0.75rem 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.react-calendar__tile:hover {
+  background: var(--bg-800);
+}
+
+.react-calendar__tile--now {
+  background: rgba(78, 161, 255, 0.15);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.react-calendar__tile--active {
+  background: var(--accent) !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+
+.react-calendar__tile:disabled {
+  color: var(--text-muted);
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.react-calendar__tile.off-day {
+  background: rgba(228, 106, 106, 0.15);
+  color: var(--danger);
+  text-decoration: line-through;
+}
+
+.react-calendar__tile.off-day:hover {
+  background: rgba(228, 106, 106, 0.25);
+}
+
+.react-calendar__month-view__days__day--neighboringMonth {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.selected-date-display {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-800);
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-heading);
+}
+
+.off-day-warning {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.booking-modal-wide {
+  max-width: 500px;
+}
+
+.time-slot.on-break {
+  background: rgba(228, 106, 106, 0.2);
+  border-color: rgba(228, 106, 106, 0.3);
+  color: var(--danger);
+}
+
+/* ===== MOBILE-FIRST COMPACT STYLES ===== */
+
+/* Base mobile scaling */
+:root {
+  font-size: 14px;
+}
+
+@media (min-width: 480px) {
+  :root {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    font-size: 16px;
+  }
+}
+
+/* Compact header */
+header {
+  padding: 1rem 0.75rem 0.5rem;
+}
+
+.header-content {
+  padding: 0.5rem 0.75rem;
+  gap: 0.5rem;
+}
+
+.lookbook-title {
+  font-size: 1.5rem;
+}
+
+/* Compact user info */
+.user-info {
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.user-info button {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+}
+
+.settings-btn {
+  padding: 0.3rem;
+}
+
+.settings-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Compact content area */
+.content {
+  padding: 0.75rem 0.5rem 1.5rem;
+}
+
+/* Compact tabs */
+.view-tabs {
+  padding: 0.15rem;
+  margin: 0 0.5rem 1rem;
+  border-radius: 0.4rem;
+  gap: 0.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.tab {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.75rem;
+  border-radius: 0.3rem;
+  gap: 0.25rem;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.tab-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.tab-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Compact category filters */
+.category-filters {
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  padding: 0 0.25rem;
+}
+
+.category-btn {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  border-radius: 1rem;
+}
+
+/* Compact cards */
+.card {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Compact specialist cards */
+.specialist-card {
+  padding: 0.75rem;
+  gap: 0.5rem;
+}
+
+.specialist-card img {
+  width: 50px;
+  height: 50px;
+}
+
+.specialist-card h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.15rem;
+}
+
+.specialist-card p {
+  font-size: 0.75rem;
+}
+
+.specialist-info .category {
+  font-size: 0.7rem;
+}
+
+.specialist-info .price {
+  font-size: 0.8rem;
+}
+
+/* Compact buttons */
+.btn-primary,
+.btn-book,
+.btn-save,
+button[type="submit"] {
+  padding: 0.5rem 0.85rem;
+  font-size: 0.8rem;
+  border-radius: 0.4rem;
+}
+
+.btn-small {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.7rem;
+}
+
+/* Compact forms */
+.form-group {
+  margin-bottom: 0.6rem;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+
+input,
+select,
+textarea {
+  padding: 0.5rem 0.65rem;
+  font-size: 0.85rem;
+  border-radius: 0.35rem;
+}
+
+/* Compact modals */
+.modal-overlay {
+  padding: 0.5rem;
+}
+
+.modal {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  max-height: 90vh;
+}
+
+.modal h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.modal h3 {
+  font-size: 0.95rem;
+}
+
+.modal-close {
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 1.1rem;
+  padding: 0.3rem;
+}
+
+/* Compact booking items */
+.booking-item {
+  padding: 0.6rem;
+  gap: 0.5rem;
+}
+
+.booking-date {
+  font-size: 0.8rem;
+}
+
+.booking-time {
+  font-size: 0.75rem;
+}
+
+.booking-service {
+  font-size: 0.85rem;
+}
+
+/* Compact time slots */
+.time-slots {
+  gap: 0.35rem;
+}
+
+.time-slot {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.75rem;
+  border-radius: 0.3rem;
+}
+
+/* Compact calendar */
+.react-calendar {
+  font-size: 0.8rem;
+  padding: 0.5rem;
+}
+
+.react-calendar__navigation button {
+  font-size: 0.85rem;
+  padding: 0.35rem;
+}
+
+.react-calendar__tile {
+  padding: 0.4rem;
+  font-size: 0.75rem;
+}
+
+/* Compact admin panel */
+.admin-panel h2 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-form {
+  padding: 0.75rem;
+}
+
+.admin-form-group {
+  margin-bottom: 0.6rem;
+}
+
+/* Compact service items */
+.service-item {
+  padding: 0.6rem;
+  gap: 0.4rem;
+}
+
+.service-item h4 {
+  font-size: 0.9rem;
+}
+
+.service-item p {
+  font-size: 0.75rem;
+}
+
+/* Compact availability manager */
+.availability-section {
+  padding: 0.75rem;
+}
+
+.availability-section h3 {
+  font-size: 0.95rem;
+}
+
+.section-header {
+  margin-bottom: 0.6rem;
+}
+
+.off-days-list > div,
+.breaks-list > div {
+  padding: 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Compact error/success messages */
+.error-message,
+.success-message {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.75rem;
+  border-radius: 0.35rem;
+}
+
+/* Compact login form */
+.auth-container {
+  padding: 1rem;
+}
+
+.auth-form {
+  padding: 1.25rem;
+}
+
+.auth-logo .lookbook-title {
+  font-size: 1.75rem;
+}
+
+/* Hide non-essential text on very small screens */
+@media (max-width: 360px) {
+  .tab-text {
+    display: none;
+  }
+  
+  .tab {
+    padding: 0.4rem 0.5rem;
+  }
+  
+  .tab-icon {
+    font-size: 1rem;
+  }
+  
+  .lookbook-title {
+    font-size: 1.3rem;
+  }
+  
+  .user-info .username {
+    display: none;
   }
 }

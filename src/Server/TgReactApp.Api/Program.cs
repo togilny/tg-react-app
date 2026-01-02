@@ -31,7 +31,8 @@ builder.Services.AddCors(options =>
 // Register repositories and services - Using EF Core for database persistence
 builder.Services.AddScoped<IUserRepository, EfUserRepository>();
 builder.Services.AddScoped<INoteRepository, InMemoryNoteRepository>(); // Keep notes in-memory for now
-builder.Services.AddSingleton<IAuthService, SimpleAuthService>();
+builder.Services.AddSingleton<IAuthService>(sp =>
+    new SimpleAuthService(sp.GetRequiredService<IConfiguration>()));
 builder.Services.AddScoped<ITodoRepository, InMemoryTodoRepository>(); // Keep todos in-memory for now
 builder.Services.AddScoped<ISpecialistRepository, EfSpecialistRepository>();
 builder.Services.AddScoped<IBookingRepository, EfBookingRepository>();
@@ -51,11 +52,12 @@ try
         
         logger.LogInformation("Initializing database...");
         
-        // In development, drop and recreate database to apply schema changes
-        // This ensures the database always matches the current model
-        if (app.Environment.IsDevelopment())
+        // Optional dev-only behavior: drop and recreate the database on startup.
+        // WARNING: This will remove all registered users and data.
+        var recreateDbOnStartup = builder.Configuration.GetValue<bool>("Database:RecreateOnStartup");
+        if (app.Environment.IsDevelopment() && recreateDbOnStartup)
         {
-            logger.LogInformation("Development mode: Recreating database with latest schema...");
+            logger.LogWarning("Development mode: Recreating database (Database:RecreateOnStartup=true)...");
             try
             {
                 dbContext.Database.EnsureDeleted();
@@ -178,7 +180,7 @@ auth.MapPost("/register", (RegisterRequest request, HttpContext context, IUserRe
 
         var token = authService.GenerateToken(user);
 
-        return Results.Ok(new { token, username = user.Username, userId = user.Id, isAdmin = user.IsAdmin, isSpecialist = user.IsSpecialist, displayName = user.DisplayName });
+        return Results.Ok(new { token, username = user.Username, userId = user.Id, isAdmin = user.IsAdmin, isSpecialist = user.IsSpecialist, displayName = user.DisplayName, mustChangePassword = user.MustChangePassword });
     }
     catch (Exception ex)
     {
@@ -202,11 +204,11 @@ auth.MapPost("/login", (LoginRequest request, IUserRepository userRepo, IAuthSer
     var user = userRepo.GetByUsername(request.Username);
     if (user == null || !authService.VerifyPassword(request.Password, user.PasswordHash))
     {
-        return Results.Unauthorized();
+        return Results.Json(new { message = "Invalid username or password." }, statusCode: StatusCodes.Status401Unauthorized);
     }
 
     var token = authService.GenerateToken(user);
-    return Results.Ok(new { token, username = user.Username, userId = user.Id, isAdmin = user.IsAdmin, isSpecialist = user.IsSpecialist, displayName = user.DisplayName });
+    return Results.Ok(new { token, username = user.Username, userId = user.Id, isAdmin = user.IsAdmin, isSpecialist = user.IsSpecialist, displayName = user.DisplayName, mustChangePassword = user.MustChangePassword });
 });
 
 // User profile endpoints
@@ -228,7 +230,8 @@ users.MapGet("/me", (HttpContext context, IUserRepository userRepo, IAuthService
         username = user.Username, 
         displayName = user.DisplayName, 
         isAdmin = user.IsAdmin, 
-        isSpecialist = user.IsSpecialist 
+        isSpecialist = user.IsSpecialist,
+        mustChangePassword = user.MustChangePassword
     });
 });
 
@@ -249,7 +252,8 @@ users.MapPut("/me", (UpdateUserRequest request, HttpContext context, IUserReposi
         passwordHash = authService.HashPassword(request.Password);
     }
 
-    var updated = userRepo.Update(userId.Value, request.Username, request.DisplayName, passwordHash);
+    var clearMustChange = passwordHash != null ? false : (bool?)null;
+    var updated = userRepo.Update(userId.Value, request.Username, request.DisplayName, passwordHash, mustChangePassword: clearMustChange);
     if (updated == null) return Results.NotFound();
 
     return Results.Ok(new { 
@@ -257,7 +261,8 @@ users.MapPut("/me", (UpdateUserRequest request, HttpContext context, IUserReposi
         username = updated.Username, 
         displayName = updated.DisplayName, 
         isAdmin = updated.IsAdmin, 
-        isSpecialist = updated.IsSpecialist 
+        isSpecialist = updated.IsSpecialist,
+        mustChangePassword = updated.MustChangePassword
     });
 });
 
@@ -428,7 +433,7 @@ specialists.MapGet("/my-profile", (HttpContext context, ISpecialistRepository re
 
 // Admin-only specialist management
 specialists.MapPost("/", (CreateSpecialistRequest request, HttpContext context, ISpecialistRepository repository,
-    IUserRepository userRepo, IAuthService authService) =>
+    IUserRepository userRepo, IAuthService authService, GlowBookDbContext dbContext) =>
 {
     var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
     var token = authHeader.Replace("Bearer ", "");
@@ -445,9 +450,56 @@ specialists.MapPost("/", (CreateSpecialistRequest request, HttpContext context, 
     if (string.IsNullOrWhiteSpace(request.Category))
         return Results.BadRequest(new { message = "Category is required." });
 
-    var specialist = repository.Add(request.Name, request.Category, request.Description, 
+    // If admin provided username + temp password, create a real specialist user account.
+    if (!string.IsNullOrWhiteSpace(request.Username) || !string.IsNullOrWhiteSpace(request.TempPassword))
+    {
+        if (string.IsNullOrWhiteSpace(request.Username) || request.Username.Length < 3)
+        {
+            return Results.BadRequest(new { message = "Username must be at least 3 characters." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.TempPassword) || request.TempPassword.Length < 6)
+        {
+            return Results.BadRequest(new { message = "Temp password must be at least 6 characters." });
+        }
+
+        if (userRepo.GetByUsername(request.Username) != null)
+        {
+            return Results.BadRequest(new { message = "Username already exists." });
+        }
+
+        var passwordHash = authService.HashPassword(request.TempPassword);
+        var createdUser = userRepo.Create(
+            request.Username,
+            passwordHash,
+            displayName: request.Name,
+            isSpecialist: true,
+            mustChangePassword: true
+        );
+
+        createdUser.Name = request.Name;
+        createdUser.DisplayName = request.Name;
+        createdUser.Category = request.Category;
+        createdUser.Description = request.Description;
+        createdUser.ImageUrl = request.ImageUrl;
+        createdUser.PricePerHour = request.PricePerHour;
+        createdUser.Rating = Math.Clamp(request.Rating, 1, 5);
+        dbContext.SaveChanges();
+
+        var specialist = repository.GetByUserId(createdUser.Id);
+        return Results.Created($"/api/specialists/{createdUser.Id}", new
+        {
+            specialist,
+            username = createdUser.Username,
+            tempPassword = request.TempPassword,
+            mustChangePassword = createdUser.MustChangePassword
+        });
+    }
+
+    // Fallback: create specialist profile without a user account (legacy behavior)
+    var specialistNoAccount = repository.Add(request.Name, request.Category, request.Description,
         request.ImageUrl, request.PricePerHour, request.Rating);
-    return Results.Created($"/api/specialists/{specialist.Id}", specialist);
+    return Results.Created($"/api/specialists/{specialistNoAccount.Id}", specialistNoAccount);
 });
 
 specialists.MapPut("/{id:guid}", (Guid id, UpdateSpecialistRequest request, HttpContext context, 
@@ -504,6 +556,209 @@ specialists.MapDelete("/{id:guid}", (Guid id, HttpContext context, ISpecialistRe
 
     var deleted = repository.Delete(id);
     return deleted ? Results.NoContent() : Results.NotFound();
+});
+
+// Specialist Availability Endpoints
+specialists.MapGet("/{id:guid}/availability", (Guid id, GlowBookDbContext dbContext, IUserRepository userRepo) =>
+{
+    var specialist = userRepo.GetById(id);
+    if (specialist == null || !specialist.IsSpecialist) return Results.NotFound();
+
+    var offDays = dbContext.SpecialistOffDays
+        .Where(o => o.SpecialistId == id)
+        .OrderBy(o => o.Date)
+        .Select(o => new { o.Id, Date = o.Date.ToString("yyyy-MM-dd"), o.Reason })
+        .ToList();
+
+    var breaks = dbContext.SpecialistBreaks
+        .Where(b => b.SpecialistId == id)
+        .OrderBy(b => b.DayOfWeek)
+        .ThenBy(b => b.StartTime)
+        .Select(b => new { 
+            b.Id, 
+            b.DayOfWeek, 
+            StartTime = b.StartTime.ToString("HH:mm"), 
+            EndTime = b.EndTime.ToString("HH:mm"), 
+            b.Description, 
+            b.IsRecurring, 
+            SpecificDate = b.SpecificDate.HasValue ? b.SpecificDate.Value.ToString("yyyy-MM-dd") : null 
+        })
+        .ToList();
+
+    return Results.Ok(new { offDays, breaks });
+});
+
+specialists.MapGet("/my-availability", (HttpContext context, GlowBookDbContext dbContext, IUserRepository userRepo, IAuthService authService) =>
+{
+    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
+    var token = authHeader.Replace("Bearer ", "");
+    var userId = authService.ValidateToken(token);
+    
+    if (userId == null) return Results.Unauthorized();
+
+    var user = userRepo.GetById(userId.Value);
+    if (user == null || !user.IsSpecialist) return Results.Forbid();
+
+    var offDays = dbContext.SpecialistOffDays
+        .Where(o => o.SpecialistId == userId.Value)
+        .OrderBy(o => o.Date)
+        .Select(o => new { o.Id, Date = o.Date.ToString("yyyy-MM-dd"), o.Reason })
+        .ToList();
+
+    var breaks = dbContext.SpecialistBreaks
+        .Where(b => b.SpecialistId == userId.Value)
+        .OrderBy(b => b.DayOfWeek)
+        .ThenBy(b => b.StartTime)
+        .Select(b => new { 
+            b.Id, 
+            b.DayOfWeek, 
+            StartTime = b.StartTime.ToString("HH:mm"), 
+            EndTime = b.EndTime.ToString("HH:mm"), 
+            b.Description, 
+            b.IsRecurring, 
+            SpecificDate = b.SpecificDate.HasValue ? b.SpecificDate.Value.ToString("yyyy-MM-dd") : null 
+        })
+        .ToList();
+
+    return Results.Ok(new { offDays, breaks });
+});
+
+// Off Days Management
+specialists.MapPost("/my-off-days", (CreateOffDayRequest request, HttpContext context, GlowBookDbContext dbContext, IUserRepository userRepo, IAuthService authService) =>
+{
+    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
+    var token = authHeader.Replace("Bearer ", "");
+    var userId = authService.ValidateToken(token);
+    
+    if (userId == null) return Results.Unauthorized();
+
+    var user = userRepo.GetById(userId.Value);
+    if (user == null || !user.IsSpecialist) return Results.Forbid();
+
+    // Check if off day already exists
+    var existing = dbContext.SpecialistOffDays.FirstOrDefault(o => o.SpecialistId == userId.Value && o.Date == request.Date);
+    if (existing != null) return Results.BadRequest(new { message = "Off day already exists for this date." });
+
+    var offDay = new SpecialistOffDay
+    {
+        Id = Guid.NewGuid(),
+        SpecialistId = userId.Value,
+        Date = request.Date,
+        Reason = request.Reason,
+        CreatedAt = DateTime.UtcNow
+    };
+
+    dbContext.SpecialistOffDays.Add(offDay);
+    dbContext.SaveChanges();
+
+    return Results.Created($"/api/specialists/my-off-days/{offDay.Id}", new { offDay.Id, Date = offDay.Date.ToString("yyyy-MM-dd"), offDay.Reason });
+});
+
+specialists.MapDelete("/my-off-days/{id:guid}", (Guid id, HttpContext context, GlowBookDbContext dbContext, IUserRepository userRepo, IAuthService authService) =>
+{
+    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
+    var token = authHeader.Replace("Bearer ", "");
+    var userId = authService.ValidateToken(token);
+    
+    if (userId == null) return Results.Unauthorized();
+
+    var user = userRepo.GetById(userId.Value);
+    if (user == null || !user.IsSpecialist) return Results.Forbid();
+
+    var offDay = dbContext.SpecialistOffDays.FirstOrDefault(o => o.Id == id && o.SpecialistId == userId.Value);
+    if (offDay == null) return Results.NotFound();
+
+    dbContext.SpecialistOffDays.Remove(offDay);
+    dbContext.SaveChanges();
+
+    return Results.NoContent();
+});
+
+// Bulk delete off days
+specialists.MapPost("/my-off-days/bulk-delete", (BulkDeleteRequest request, HttpContext context, GlowBookDbContext dbContext, IUserRepository userRepo, IAuthService authService) =>
+{
+    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
+    var token = authHeader.Replace("Bearer ", "");
+    var userId = authService.ValidateToken(token);
+    
+    if (userId == null) return Results.Unauthorized();
+
+    var user = userRepo.GetById(userId.Value);
+    if (user == null || !user.IsSpecialist) return Results.Forbid();
+
+    var offDaysToDelete = dbContext.SpecialistOffDays
+        .Where(o => request.Ids.Contains(o.Id) && o.SpecialistId == userId.Value)
+        .ToList();
+
+    dbContext.SpecialistOffDays.RemoveRange(offDaysToDelete);
+    dbContext.SaveChanges();
+
+    return Results.Ok(new { deleted = offDaysToDelete.Count });
+});
+
+// Breaks Management
+specialists.MapPost("/my-breaks", (CreateBreakRequest request, HttpContext context, GlowBookDbContext dbContext, IUserRepository userRepo, IAuthService authService) =>
+{
+    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
+    var token = authHeader.Replace("Bearer ", "");
+    var userId = authService.ValidateToken(token);
+    
+    if (userId == null) return Results.Unauthorized();
+
+    var user = userRepo.GetById(userId.Value);
+    if (user == null || !user.IsSpecialist) return Results.Forbid();
+
+    if (!TimeOnly.TryParse(request.StartTime, out var startTime) || !TimeOnly.TryParse(request.EndTime, out var endTime))
+        return Results.BadRequest(new { message = "Invalid time format. Use HH:mm format." });
+
+    if (startTime >= endTime)
+        return Results.BadRequest(new { message = "Start time must be before end time." });
+
+    var breakItem = new SpecialistBreak
+    {
+        Id = Guid.NewGuid(),
+        SpecialistId = userId.Value,
+        DayOfWeek = request.DayOfWeek,
+        StartTime = startTime,
+        EndTime = endTime,
+        Description = request.Description,
+        IsRecurring = request.IsRecurring,
+        SpecificDate = request.SpecificDate,
+        CreatedAt = DateTime.UtcNow
+    };
+
+    dbContext.SpecialistBreaks.Add(breakItem);
+    dbContext.SaveChanges();
+
+    return Results.Created($"/api/specialists/my-breaks/{breakItem.Id}", new { 
+        breakItem.Id, 
+        breakItem.DayOfWeek, 
+        StartTime = breakItem.StartTime.ToString("HH:mm"), 
+        EndTime = breakItem.EndTime.ToString("HH:mm"), 
+        breakItem.Description, 
+        breakItem.IsRecurring,
+        SpecificDate = breakItem.SpecificDate?.ToString("yyyy-MM-dd")
+    });
+});
+
+specialists.MapDelete("/my-breaks/{id:guid}", (Guid id, HttpContext context, GlowBookDbContext dbContext, IUserRepository userRepo, IAuthService authService) =>
+{
+    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
+    var token = authHeader.Replace("Bearer ", "");
+    var userId = authService.ValidateToken(token);
+    
+    if (userId == null) return Results.Unauthorized();
+
+    var user = userRepo.GetById(userId.Value);
+    if (user == null || !user.IsSpecialist) return Results.Forbid();
+
+    var breakItem = dbContext.SpecialistBreaks.FirstOrDefault(b => b.Id == id && b.SpecialistId == userId.Value);
+    if (breakItem == null) return Results.NotFound();
+
+    dbContext.SpecialistBreaks.Remove(breakItem);
+    dbContext.SaveChanges();
+
+    return Results.NoContent();
 });
 
 // Bookings endpoints - Protected

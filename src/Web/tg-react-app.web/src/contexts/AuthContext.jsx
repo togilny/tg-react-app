@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { login as loginApi, register as registerApi } from '../services/authApi';
+import { login as loginApi, register as registerApi, fetchMyProfile } from '../services/authApi';
 
 const AuthContext = createContext(null);
 
@@ -15,10 +15,30 @@ export function AuthProvider({ children }) {
     const isAdmin = localStorage.getItem('isAdmin') === 'true';
     const isSpecialist = localStorage.getItem('isSpecialist') === 'true';
 
-    if (token && username && userId) {
-      setUser({ username, userId, token, isAdmin, isSpecialist });
+    if (!token || !username || !userId) {
+      setIsLoading(false);
+      return;
     }
-    setIsLoading(false);
+
+    setUser({ username, userId, token, isAdmin, isSpecialist });
+
+    // Validate token with backend; if stale, clear local state so user can re-login.
+    (async () => {
+      try {
+        await fetchMyProfile();
+      } catch (err) {
+        if (err?.status === 401) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('username');
+          localStorage.removeItem('userId');
+          localStorage.removeItem('isAdmin');
+          localStorage.removeItem('isSpecialist');
+          setUser(null);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   }, []);
 
   const login = useCallback(async (username, password) => {

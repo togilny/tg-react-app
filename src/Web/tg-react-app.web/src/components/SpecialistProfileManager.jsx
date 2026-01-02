@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { fetchMyProfile, updateSpecialist, deleteSpecialist } from '../services/specialistApi';
 import { fetchMyProfile as fetchUserProfile, updateMyProfile } from '../services/authApi';
 import { fetchMyServices } from '../services/serviceApi';
+import AvailabilityManager from './AvailabilityManager';
 
 export default function SpecialistProfileManager() {
   const [specialist, setSpecialist] = useState(null);
   const [services, setServices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showAvailability, setShowAvailability] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
@@ -431,6 +433,18 @@ export default function SpecialistProfileManager() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {!showForm && !showPasswordForm && (
+        <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#1f2937', borderRadius: '0.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showAvailability ? '1rem' : 0 }}>
+            <h3 style={{ margin: 0 }}>📅 Availability Settings</h3>
+            <button onClick={() => setShowAvailability(!showAvailability)} className="btn-primary">
+              {showAvailability ? 'Hide' : 'Manage Availability'}
+            </button>
+          </div>
+          {showAvailability && <AvailabilityManager />}
         </div>
       )}
 

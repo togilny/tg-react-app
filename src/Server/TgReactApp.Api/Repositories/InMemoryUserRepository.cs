@@ -14,7 +14,7 @@ public sealed class InMemoryUserRepository : IUserRepository
     public User? GetById(Guid id)
         => _usersById.TryGetValue(id, out var user) ? user : null;
 
-    public User Create(string username, string passwordHash, string? displayName = null, bool isSpecialist = false)
+    public User Create(string username, string passwordHash, string? displayName = null, bool isSpecialist = false, bool mustChangePassword = false)
     {
         // First user is admin, or username "tony" is admin
         var isAdmin = _usersById.Count == 0 || username.Equals("tony", StringComparison.OrdinalIgnoreCase);
@@ -27,6 +27,7 @@ public sealed class InMemoryUserRepository : IUserRepository
             DisplayName = displayName,
             IsAdmin = isAdmin,
             IsSpecialist = isSpecialist,
+            MustChangePassword = mustChangePassword,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -36,7 +37,7 @@ public sealed class InMemoryUserRepository : IUserRepository
         return user;
     }
 
-    public User? Update(Guid id, string? username = null, string? displayName = null, string? passwordHash = null)
+    public User? Update(Guid id, string? username = null, string? displayName = null, string? passwordHash = null, bool? mustChangePassword = null)
     {
         if (!_usersById.TryGetValue(id, out var user))
             return null;
@@ -57,6 +58,11 @@ public sealed class InMemoryUserRepository : IUserRepository
         if (!string.IsNullOrWhiteSpace(passwordHash))
         {
             user.PasswordHash = passwordHash;
+        }
+
+        if (mustChangePassword.HasValue)
+        {
+            user.MustChangePassword = mustChangePassword.Value;
         }
 
         return user;

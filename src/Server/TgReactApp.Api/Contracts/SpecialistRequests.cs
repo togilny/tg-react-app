@@ -6,7 +6,9 @@ public record CreateSpecialistRequest(
     string? Description,
     string? ImageUrl,
     decimal PricePerHour,
-    int Rating
+    int Rating,
+    string? Username = null,
+    string? TempPassword = null
 );
 
 public record UpdateSpecialistRequest(

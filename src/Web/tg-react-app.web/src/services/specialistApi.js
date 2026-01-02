@@ -58,3 +58,37 @@ export const deleteSpecialist = (id) =>
     method: 'DELETE'
   });
 
+// Availability endpoints
+export const fetchSpecialistAvailability = (specialistId) =>
+  request(`/api/specialists/${specialistId}/availability`);
+
+export const fetchMyAvailability = () =>
+  request('/api/specialists/my-availability');
+
+export const addOffDay = (date, reason = null) =>
+  request('/api/specialists/my-off-days', {
+    method: 'POST',
+    body: JSON.stringify({ date, reason })
+  });
+
+export const deleteOffDay = (id) =>
+  request(`/api/specialists/my-off-days/${id}`, {
+    method: 'DELETE'
+  });
+
+export const bulkDeleteOffDays = (ids) =>
+  request('/api/specialists/my-off-days/bulk-delete', {
+    method: 'POST',
+    body: JSON.stringify({ ids })
+  });
+
+export const addBreak = (payload) =>
+  request('/api/specialists/my-breaks', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+
+export const deleteBreak = (id) =>
+  request(`/api/specialists/my-breaks/${id}`, {
+    method: 'DELETE'
+  });

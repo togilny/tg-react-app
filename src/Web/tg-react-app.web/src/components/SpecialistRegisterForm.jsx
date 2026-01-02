@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { Box, Button, IconButton, InputAdornment, TextField } from '@mui/material';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 
 export default function SpecialistRegisterForm({ onRegister, onSwitchToLogin, onSwitchToRegular, error }) {
   const [username, setUsername] = useState('');
@@ -9,6 +12,8 @@ export default function SpecialistRegisterForm({ onRegister, onSwitchToLogin, on
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,7 +53,7 @@ export default function SpecialistRegisterForm({ onRegister, onSwitchToLogin, on
   return (
     <div className="auth-form">
       <h2>Register as a Specialist</h2>
-      <form onSubmit={handleSubmit}>
+      <Box component="form" onSubmit={handleSubmit}>
         {(error || validationError) && (
           <div className="error-message" role="alert">
             {validationError || error}
@@ -56,54 +61,59 @@ export default function SpecialistRegisterForm({ onRegister, onSwitchToLogin, on
         )}
         
         <div className="form-group">
-          <label htmlFor="username">Username *</label>
-          <input
+          <TextField
             id="username"
-            type="text"
+            label="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Choose a username (min 3 characters)"
             disabled={isLoading}
             required
+            fullWidth
+            size="small"
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="firstName">First Name *</label>
-          <input
+          <TextField
             id="firstName"
-            type="text"
+            label="First Name"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             placeholder="Your first name"
             disabled={isLoading}
             required
+            fullWidth
+            size="small"
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="lastName">Last Name *</label>
-          <input
+          <TextField
             id="lastName"
-            type="text"
+            label="Last Name"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             placeholder="Your last name"
             disabled={isLoading}
             required
+            fullWidth
+            size="small"
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="specialistCode">Specialist Registration Code *</label>
-          <input
+          <TextField
             id="specialistCode"
+            label="Specialist Registration Code"
             type="text"
             value={specialistCode}
             onChange={(e) => setSpecialistCode(e.target.value)}
             placeholder="Enter your specialist code"
             disabled={isLoading}
             required
+            fullWidth
+            size="small"
           />
           <small style={{ color: '#a1a1aa', fontSize: '0.85rem', display: 'block', marginTop: '0.25rem' }}>
             Required to register as a specialist and offer services.
@@ -111,34 +121,66 @@ export default function SpecialistRegisterForm({ onRegister, onSwitchToLogin, on
         </div>
 
         <div className="form-group">
-          <label htmlFor="password">Password *</label>
-          <input
+          <TextField
             id="password"
-            type="password"
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Choose a password (min 6 characters)"
             disabled={isLoading}
             required
+            fullWidth
+            size="small"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    edge="end"
+                    disabled={isLoading}
+                  >
+                    {showPassword ? <VisibilityOutlinedIcon /> : <VisibilityOffOutlinedIcon />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="confirmPassword">Confirm Password *</label>
-          <input
+          <TextField
             id="confirmPassword"
-            type="password"
+            label="Confirm Password"
+            type={showConfirmPassword ? 'text' : 'password'}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Confirm your password"
             disabled={isLoading}
             required
+            fullWidth
+            size="small"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    edge="end"
+                    disabled={isLoading}
+                  >
+                    {showConfirmPassword ? <VisibilityOutlinedIcon /> : <VisibilityOffOutlinedIcon />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
           />
         </div>
 
-        <button type="submit" disabled={isLoading}>
+        <Button type="submit" variant="contained" disabled={isLoading} sx={{ mt: 1, width: 'fit-content' }}>
           {isLoading ? 'Creating account...' : 'Register as Specialist'}
-        </button>
+        </Button>
 
         <p className="auth-switch" style={{ marginBottom: '0.5rem' }}>
           Looking to register as a regular user?{' '}
@@ -153,7 +195,7 @@ export default function SpecialistRegisterForm({ onRegister, onSwitchToLogin, on
             Login here
           </button>
         </p>
-      </form>
+      </Box>
     </div>
   );
 }

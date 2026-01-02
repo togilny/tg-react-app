@@ -12,6 +12,7 @@ public class User
     public string? DisplayName { get; set; }
     public bool IsAdmin { get; set; }
     public bool IsSpecialist { get; set; }
+    public bool MustChangePassword { get; set; }
     public DateTime CreatedAt { get; set; }
     
     // Client fields (merged from Client model)

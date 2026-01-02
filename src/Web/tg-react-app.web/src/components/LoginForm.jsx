@@ -1,9 +1,17 @@
 import { useState } from 'react';
+import { Box, Button, IconButton, InputAdornment, TextField, Tooltip } from '@mui/material';
+import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
+import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import { useThemeMode } from '../contexts/ThemeModeContext.jsx';
 
 export default function LoginForm({ onLogin, onSwitchToRegister, error }) {
+  const { mode, toggleMode } = useThemeMode();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,11 +28,23 @@ export default function LoginForm({ onLogin, onSwitchToRegister, error }) {
   };
 
   return (
-    <div className="auth-form">
+    <div className="auth-form" style={{ position: 'relative' }}>
+      <Tooltip title={mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+        <IconButton
+          aria-label={mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          onClick={toggleMode}
+          size="small"
+          sx={{ position: 'absolute', top: 16, right: 16, border: '1px solid', borderColor: 'divider' }}
+        >
+          {mode === 'dark' ? <LightModeOutlinedIcon fontSize="small" /> : <DarkModeOutlinedIcon fontSize="small" />}
+        </IconButton>
+      </Tooltip>
+
       <div className="auth-logo">
-        <img src="/GB-Logo-White.png" alt="GlowBook" className="auth-logo-img" />
+        <h1 className="lookbook-title">LookBook</h1>
       </div>
-      <form onSubmit={handleSubmit}>
+
+      <Box component="form" onSubmit={handleSubmit}>
         {error && (
           <div className="error-message" role="alert">
             {error}
@@ -32,34 +52,56 @@ export default function LoginForm({ onLogin, onSwitchToRegister, error }) {
         )}
         
         <div className="form-group">
-          <label htmlFor="username">Username</label>
-          <input
+          <TextField
             id="username"
-            type="text"
+            label="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Enter your username"
             disabled={isLoading}
             required
+            fullWidth
+            size="small"
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="password">Password</label>
-          <input
+          <TextField
             id="password"
-            type="password"
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
             disabled={isLoading}
             required
+            fullWidth
+            size="small"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    edge="end"
+                    disabled={isLoading}
+                  >
+                    {showPassword ? <VisibilityOutlinedIcon /> : <VisibilityOffOutlinedIcon />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
           />
         </div>
 
-        <button type="submit" disabled={isLoading || !username.trim() || !password}>
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={isLoading || !username.trim() || !password}
+          sx={{ mt: 1, width: 'fit-content' }}
+        >
           {isLoading ? 'Logging in...' : 'Login'}
-        </button>
+        </Button>
 
         <p className="auth-switch">
           Don't have an account?{' '}
@@ -67,7 +109,7 @@ export default function LoginForm({ onLogin, onSwitchToRegister, error }) {
             Register here
           </button>
         </p>
-      </form>
+      </Box>
     </div>
   );
 }
