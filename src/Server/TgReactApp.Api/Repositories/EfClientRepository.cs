@@ -45,7 +45,7 @@ public class EfClientRepository : IClientRepository
         };
     }
 
-    public Client? GetByEmail(string email)
+        public Client? GetByEmail(string email)
     {
         var user = _context.Users
             .FirstOrDefault(u => u.Email != null && u.Email.ToLower() == email.ToLower());
@@ -56,7 +56,7 @@ public class EfClientRepository : IClientRepository
         {
             Id = user.Id,
             Name = user.Name ?? user.DisplayName ?? user.Username,
-            Email = user.Email,
+            Email = user.Email!,
             Phone = user.Phone,
             Notes = user.Notes,
             CreatedAt = user.CreatedAt
@@ -154,10 +154,10 @@ public class EfClientRepository : IClientRepository
         }
         
         // If registered user, just clear client fields
-        user.Name = null;
-        user.Email = null;
-        user.Phone = null;
-        user.Notes = null;
+        user.Name = null!;
+        user.Email = null!;
+        user.Phone = null!;
+        user.Notes = null!;
         _context.SaveChanges();
         return true;
     }

@@ -92,3 +92,6 @@ export const deleteBreak = (id) =>
   request(`/api/specialists/my-breaks/${id}`, {
     method: 'DELETE'
   });
+
+export const fetchMyAppointments = () =>
+  request('/api/specialists/my-appointments');

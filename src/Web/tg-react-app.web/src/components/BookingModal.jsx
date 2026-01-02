@@ -57,6 +57,7 @@ export default function BookingModal({ specialist, onClose, onSubmit }) {
   const loadAvailability = async () => {
     try {
       const data = await fetchSpecialistAvailability(specialist.id);
+      console.log('Loaded availability:', data);
       setAvailability(data);
     } catch (error) {
       console.error('Error loading availability:', error);
@@ -73,8 +74,13 @@ export default function BookingModal({ specialist, onClose, onSubmit }) {
     }
   };
 
+  // Parse time strings coming from the API (e.g., "15:00", "15:00:00", "15:00:00.0000000")
   const timeToMinutes = (timeStr) => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
+    if (!timeStr) return NaN;
+    const parts = timeStr.split(':');
+    const hours = Number(parts[0]);
+    const minutes = Number(parts[1]);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return NaN;
     return hours * 60 + minutes;
   };
 
@@ -92,14 +98,21 @@ export default function BookingModal({ specialist, onClose, onSubmit }) {
 
     return availability.breaks.some(brk => {
       // Check if break applies to this date
+      const breakDay = brk.dayOfWeek === null || brk.dayOfWeek === undefined ? null : Number(brk.dayOfWeek);
       const appliesToThisDay = 
-        (brk.isRecurring && (brk.dayOfWeek === null || brk.dayOfWeek === dayOfWeek)) ||
+        (brk.isRecurring && (breakDay === null || breakDay === dayOfWeek)) ||
         (!brk.isRecurring && brk.specificDate === dateStr);
 
       if (!appliesToThisDay) return false;
 
       const breakStart = timeToMinutes(brk.startTime);
       const breakEnd = timeToMinutes(brk.endTime);
+      if (Number.isNaN(breakStart) || Number.isNaN(breakEnd)) {
+        console.warn('Invalid break times:', brk);
+        return false;
+      }
+
+      console.log(`Checking break: ${brk.startTime}-${brk.endTime} (${breakStart}-${breakEnd} mins) vs slot ${time} (${slotStart} mins) on day ${dayOfWeek}`);
 
       // Check if slot overlaps with break
       const service = getSelectedServiceDetails();

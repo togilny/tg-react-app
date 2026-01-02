@@ -32,7 +32,13 @@ const request = async (path, options = {}) => {
   return toJson(response);
 };
 
-export const fetchBookings = () => request('/api/bookings');
+export const fetchBookings = () => {
+  console.log('Fetching bookings with token:', getToken()?.substring(0, 20) + '...');
+  return request('/api/bookings').then(result => {
+    console.log('Bookings API response:', result);
+    return result;
+  });
+};
 
 export const fetchBookedSlots = (specialistId, date) => {
   const dateStr = date.toISOString().split('T')[0];

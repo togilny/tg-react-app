@@ -58,6 +58,21 @@ export function createAppTheme(mode = 'dark') {
             }
           }
         }
+      },
+      MuiTextField: {
+        styleOverrides: {
+          root: {
+            '& .MuiOutlinedInput-root': {
+              backgroundColor: 'rgba(15, 30, 50, 0.25)',
+              '&:hover': {
+                backgroundColor: 'rgba(15, 30, 50, 0.35)'
+              },
+              '&.Mui-focused': {
+                backgroundColor: 'rgba(15, 30, 50, 0.35)'
+              }
+            }
+          }
+        }
       }
     }
   });

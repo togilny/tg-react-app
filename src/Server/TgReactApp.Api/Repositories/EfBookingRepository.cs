@@ -27,6 +27,13 @@ public class EfBookingRepository : IBookingRepository
                 && b.Status == "Confirmed")
             .ToList();
 
+    public List<Booking> GetBySpecialistId(Guid specialistId) =>
+        _context.Bookings
+            .Where(b => b.SpecialistId == specialistId)
+            .OrderByDescending(b => b.BookingDate)
+            .ThenBy(b => b.StartTime)
+            .ToList();
+
     public Booking? GetById(Guid id, Guid userId) =>
         _context.Bookings
             .FirstOrDefault(b => b.Id == id && b.UserId == userId);

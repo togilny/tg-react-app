@@ -30,6 +30,22 @@
             "name": ".NET Core Attach",
             "type": "coreclr",
             "request": "attach"
+        },
+        {
+            "name": "Vite React (Firefox Dev)",
+            "type": "firefox",
+            "request": "launch",
+            "reAttach": true,
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/src/Web/tg-react-app.web",
+            "pathMappings": [
+                {
+                    "url": "http://localhost:5173/",
+                    "path": "${workspaceFolder}/src/Web/tg-react-app.web"
+                }
+            ],
+            "firefoxExecutable": "C:/Program Files/Firefox Developer Edition/firefox.exe",
+            "console": "integratedTerminal"
         }
     ]
 }

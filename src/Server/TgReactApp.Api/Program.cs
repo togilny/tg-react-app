@@ -623,6 +623,22 @@ specialists.MapGet("/my-availability", (HttpContext context, GlowBookDbContext d
     return Results.Ok(new { offDays, breaks });
 });
 
+// Specialist Appointments (bookings where they are the specialist)
+specialists.MapGet("/my-appointments", (HttpContext context, IBookingRepository bookingRepo, IUserRepository userRepo, IAuthService authService) =>
+{
+    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
+    var token = authHeader.Replace("Bearer ", "");
+    var userId = authService.ValidateToken(token);
+    
+    if (userId == null) return Results.Unauthorized();
+
+    var user = userRepo.GetById(userId.Value);
+    if (user == null || !user.IsSpecialist) return Results.Forbid();
+
+    var appointments = bookingRepo.GetBySpecialistId(userId.Value);
+    return Results.Ok(appointments);
+});
+
 // Off Days Management
 specialists.MapPost("/my-off-days", (CreateOffDayRequest request, HttpContext context, GlowBookDbContext dbContext, IUserRepository userRepo, IAuthService authService) =>
 {
@@ -764,7 +780,7 @@ specialists.MapDelete("/my-breaks/{id:guid}", (Guid id, HttpContext context, Glo
 // Bookings endpoints - Protected
 var bookings = app.MapGroup("/api/bookings").WithTags("Bookings");
 
-bookings.MapGet("/", (HttpContext context, IBookingRepository repository, IAuthService authService) =>
+bookings.MapGet("/", (HttpContext context, IBookingRepository repository, IAuthService authService, ILogger<Program> logger) =>
 {
     var authHeader = context.Request.Headers["Authorization"].FirstOrDefault() ?? "";
     var token = authHeader.Replace("Bearer ", "");
@@ -773,6 +789,7 @@ bookings.MapGet("/", (HttpContext context, IBookingRepository repository, IAuthS
     if (userId == null) return Results.Unauthorized();
 
     var results = repository.GetAllByUser(userId.Value);
+    logger.LogInformation("GET /api/bookings for userId {UserId} returned {Count} bookings", userId.Value, results.Count);
     return Results.Ok(results);
 });
 

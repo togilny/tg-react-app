@@ -11,6 +11,7 @@ import AdminClientManager from './components/AdminClientManager.jsx';
 import AdminSpecialistManager from './components/AdminSpecialistManager.jsx';
 import SpecialistServiceManager from './components/SpecialistServiceManager.jsx';
 import SpecialistProfileManager from './components/SpecialistProfileManager.jsx';
+import SpecialistCalendar from './components/SpecialistCalendar.jsx';
 import UserProfileManager from './components/UserProfileManager.jsx';
 import { fetchSpecialists } from './services/specialistApi.js';
 import { fetchBookings, createBooking, cancelBooking } from './services/bookingApi.js';
@@ -51,7 +52,7 @@ function LookBookApp() {
       }
     }
     // Redirect non-specialists from specialist views to specialists
-    if (user && !user.isSpecialist && currentView === 'client-bookings') {
+    if (user && !user.isSpecialist && (currentView === 'my-appointments' || currentView === 'my-services')) {
       setCurrentView('specialists');
     }
   }, [user?.isSpecialist, user?.isAdmin, currentView]);
@@ -184,11 +185,11 @@ function LookBookApp() {
               <span className="tab-text">Services</span>
             </button>
             <button
-              className={`tab ${currentView === 'client-bookings' ? 'active' : ''}`}
-              onClick={() => setCurrentView('client-bookings')}
+              className={`tab ${currentView === 'my-appointments' ? 'active' : ''}`}
+              onClick={() => setCurrentView('my-appointments')}
             >
               <span className="tab-icon">📅</span>
-              <span className="tab-text">Clients</span>
+              <span className="tab-text">Appointments</span>
             </button>
           </>
         )}
@@ -254,15 +255,9 @@ function LookBookApp() {
           <section className="card">
             <SpecialistServiceManager />
           </section>
-        ) : currentView === 'client-bookings' ? (
+        ) : currentView === 'my-appointments' ? (
           <section className="card">
-            <h2>Client Bookings</h2>
-            <p style={{ color: '#a1a1aa', marginBottom: '1.5rem' }}>Bookings made with you</p>
-            <BookingList
-              bookings={bookings}
-              specialists={specialists}
-              onCancel={handleCancelBooking}
-            />
+            <SpecialistCalendar />
           </section>
         ) : currentView === 'admin-specialists' ? (
           <>

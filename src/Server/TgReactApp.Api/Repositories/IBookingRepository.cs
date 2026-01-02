@@ -6,6 +6,7 @@ public interface IBookingRepository
 {
     List<Booking> GetAllByUser(Guid userId);
     List<Booking> GetBySpecialist(Guid specialistId, DateTime date);
+    List<Booking> GetBySpecialistId(Guid specialistId);
     Booking? GetById(Guid id, Guid userId);
     Booking Add(Guid userId, Guid specialistId, DateTime bookingDate, TimeSpan startTime, TimeSpan endTime, string service, string? notes);
     bool Cancel(Guid id, Guid userId);
@@ -20,6 +21,9 @@ public class InMemoryBookingRepository : IBookingRepository
 
     public List<Booking> GetBySpecialist(Guid specialistId, DateTime date) =>
         _bookings.Where(b => b.SpecialistId == specialistId && b.BookingDate.Date == date.Date && b.Status == "Confirmed").ToList();
+
+    public List<Booking> GetBySpecialistId(Guid specialistId) =>
+        _bookings.Where(b => b.SpecialistId == specialistId).OrderByDescending(b => b.BookingDate).ThenBy(b => b.StartTime).ToList();
 
     public Booking? GetById(Guid id, Guid userId) =>
         _bookings.FirstOrDefault(b => b.Id == id && b.UserId == userId);
