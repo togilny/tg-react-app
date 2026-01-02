@@ -335,6 +335,20 @@ h2 {
   color: #a1a1aa;
 }
 
+.spinner {
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #60a5fa;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Note Form Styles */
 .note-form {
   display: flex;
@@ -600,56 +614,61 @@ button:disabled:not(.MuiButton-root) {
 }
 
 button[type="submit"]:not(.MuiButton-root) {
-  background: #2563eb;
+  background: rgba(37, 99, 235, 0.25);
   border-color: #2563eb;
-  color: #fff;
+  color: #2563eb;
 }
 
 button[type="submit"]:not(:disabled):not(.MuiButton-root):hover {
-  background: #1d4ed8;
+  background: rgba(29, 78, 216, 0.4);
   border-color: #1d4ed8;
+  color: #1d4ed8;
 }
 
 .btn-edit {
-  background: #3b82f6;
+  background: rgba(59, 130, 246, 0.25);
   border-color: #3b82f6;
-  color: #fff;
+  color: #3b82f6;
 }
 
 .btn-edit:hover {
-  background: #2563eb;
+  background: rgba(37, 99, 235, 0.4);
   border-color: #2563eb;
+  color: #2563eb;
 }
 
 .btn-delete {
-  background: transparent;
+  background: rgba(220, 38, 38, 0.25);
   border-color: #dc2626;
-  color: #dc2626;
+  color: #ffffff;
 }
 
 .btn-delete:hover {
-  border-color: #b91c1c;
-  color: #b91c1c;
+  background: rgba(220, 38, 38, 0.35);
+  border-color: #dc2626;
+  color: #ffffff;
 }
 
 .btn-save {
-  background: #16a34a;
+  background: rgba(22, 163, 74, 0.25);
   border-color: #16a34a;
-  color: #fff;
+  color: #16a34a;
 }
 
 .btn-save:hover {
-  background: #15803d;
+  background: rgba(21, 128, 61, 0.4);
   border-color: #15803d;
+  color: #15803d;
 }
 
 .btn-cancel {
-  background: transparent;
+  background: rgba(113, 113, 122, 0.25);
   border-color: #71717a;
   color: #71717a;
 }
 
 .btn-cancel:hover {
+  background: rgba(82, 82, 91, 0.4);
   border-color: #52525b;
   color: #52525b;
 }
@@ -884,16 +903,18 @@ textarea:not([class*='Mui']):focus {
 }
 
 .btn-book {
-  background: #10b981;
+  background: rgba(16, 185, 129, 0.25);
   border-color: #10b981;
-  color: #fff;
+  color: #ffffff;
   padding: 0.65rem 1.25rem;
   white-space: nowrap;
+  font-weight: 600;
 }
 
 .btn-book:hover {
-  background: #059669;
-  border-color: #059669;
+  background: rgba(16, 185, 129, 0.35);
+  border-color: #10b981;
+  color: #ffffff;
 }
 
 /* Booking Modal */
@@ -1042,14 +1063,15 @@ textarea:not([class*='Mui']):focus {
 }
 
 .btn-confirm {
-  background: #10b981;
+  background: rgba(16, 185, 129, 0.25);
   border-color: #10b981;
-  color: #fff;
+  color: #10b981;
 }
 
 .btn-confirm:not(:disabled):hover {
-  background: #059669;
+  background: rgba(5, 150, 105, 0.4);
   border-color: #059669;
+  color: #059669;
 }
 
 /* Booking List */
@@ -1203,15 +1225,16 @@ textarea:not([class*='Mui']):focus {
 }
 
 .btn-primary {
-  background: #2563eb;
+  background: rgba(37, 99, 235, 0.25);
   border-color: #2563eb;
-  color: #fff;
+  color: #2563eb;
   padding: 0.65rem 1.25rem;
 }
 
 .btn-primary:hover {
-  background: #1d4ed8;
+  background: rgba(29, 78, 216, 0.4);
   border-color: #1d4ed8;
+  color: #1d4ed8;
 }
 
 .service-form {
@@ -1734,11 +1757,17 @@ button {
 }
 
 button[type="submit"],
-.btn-primary,
+.btn-primary {
+  background: rgba(78, 161, 255, 0.2);
+  color: #ffffff;
+  border: 1px solid rgba(78, 161, 255, 0.4);
+  box-shadow: none;
+}
+
 .btn-book {
-  background: var(--accent);
-  color: #0f141c;
-  border: 1px solid var(--accent);
+  background: rgba(16, 185, 129, 0.2);
+  color: #ffffff;
+  border: 1px solid rgba(16, 185, 129, 0.4);
   box-shadow: none;
 }
 
