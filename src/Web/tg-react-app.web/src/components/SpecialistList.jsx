@@ -1,28 +1,36 @@
 import SpecialistCard from './SpecialistCard';
+import { Grid, Box, CircularProgress, Typography } from '@mui/material';
 
 export default function SpecialistList({ specialists, onBook, isLoading }) {
   if (isLoading) {
-    return <p className="loading-text">Loading specialists...</p>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (specialists.length === 0) {
     return (
-      <div className="empty-state">
-        <p>No specialists found</p>
-      </div>
+      <Box sx={{ textAlign: 'center', py: 8 }}>
+        <Typography variant="h6" color="text.secondary">
+          No specialists found
+        </Typography>
+      </Box>
     );
   }
 
   return (
-    <div className="specialist-list">
+    <Grid container spacing={{ xs: 2, md: 3 }}>
       {specialists.map((specialist) => (
-        <SpecialistCard
-          key={specialist.id}
-          specialist={specialist}
-          onBook={onBook}
-        />
+        <Grid item xs={12} sm={6} md={4} lg={3} key={specialist.id}>
+          <SpecialistCard
+            specialist={specialist}
+            onBook={onBook}
+          />
+        </Grid>
       ))}
-    </div>
+    </Grid>
   );
 }
 

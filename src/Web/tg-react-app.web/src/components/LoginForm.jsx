@@ -28,30 +28,51 @@ export default function LoginForm({ onLogin, onSwitchToRegister, error }) {
   };
 
   return (
-    <div className="auth-form" style={{ position: 'relative' }}>
+    <Box sx={{ 
+      bgcolor: 'background.paper', 
+      borderRadius: 2, 
+      p: { xs: 3, sm: 4 }, 
+      boxShadow: 3,
+      border: 1,
+      borderColor: 'divider',
+      position: 'relative',
+      maxWidth: 450,
+      mx: 'auto',
+    }}>
       <Tooltip title={mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
         <IconButton
           aria-label={mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           onClick={toggleMode}
           size="small"
-          sx={{ position: 'absolute', top: 16, right: 16, border: '1px solid', borderColor: 'divider' }}
+          sx={{ position: 'absolute', top: 16, right: 16, border: 1, borderColor: 'divider' }}
         >
           {mode === 'dark' ? <LightModeOutlinedIcon fontSize="small" /> : <DarkModeOutlinedIcon fontSize="small" />}
         </IconButton>
       </Tooltip>
 
-      <div className="auth-logo">
-        <h1 className="lookbook-title">LookBook</h1>
-      </div>
+      <Typography variant="h4" component="h1" sx={{ mb: 4, fontWeight: 700, textAlign: 'center' }}>
+        LookBook
+      </Typography>
 
       <Box component="form" onSubmit={handleSubmit}>
         {error && (
-          <div className="error-message" role="alert">
+          <Box 
+            role="alert"
+            sx={{
+              p: 2,
+              mb: 2,
+              bgcolor: 'error.dark',
+              color: 'error.contrastText',
+              borderRadius: 1,
+              border: 1,
+              borderColor: 'error.main',
+            }}
+          >
             {error}
-          </div>
+          </Box>
         )}
         
-        <div className="form-group">
+        <Box sx={{ mb: 2 }}>
           <TextField
             id="username"
             label="Username"
@@ -61,11 +82,10 @@ export default function LoginForm({ onLogin, onSwitchToRegister, error }) {
             disabled={isLoading}
             required
             fullWidth
-            size="small"
           />
-        </div>
+        </Box>
 
-        <div className="form-group">
+        <Box sx={{ mb: 3 }}>
           <TextField
             id="password"
             label="Password"
@@ -76,7 +96,6 @@ export default function LoginForm({ onLogin, onSwitchToRegister, error }) {
             disabled={isLoading}
             required
             fullWidth
-            size="small"
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -92,25 +111,31 @@ export default function LoginForm({ onLogin, onSwitchToRegister, error }) {
               )
             }}
           />
-        </div>
+        </Box>
 
         <Button
           type="submit"
           variant="contained"
           disabled={isLoading || !username.trim() || !password}
-          sx={{ mt: 1, width: 'fit-content' }}
+          fullWidth
+          size="large"
+          sx={{ mb: 2 }}
         >
           {isLoading ? 'Logging in...' : 'Login'}
         </Button>
 
-        <p className="auth-switch">
+        <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary' }}>
           Don't have an account?{' '}
-          <button type="button" onClick={onSwitchToRegister} className="link-button">
+          <Button 
+            variant="text" 
+            onClick={onSwitchToRegister}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
             Register here
-          </button>
-        </p>
+          </Button>
+        </Typography>
       </Box>
-    </div>
+    </Box>
   );
 }
 

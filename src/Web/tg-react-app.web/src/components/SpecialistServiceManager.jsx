@@ -205,11 +205,37 @@ export default function SpecialistServiceManager() {
                       </p>
                     )}
                   </div>
-                  <div className="admin-list-item-actions">
-                    <button onClick={() => handleEdit(service)} className="btn-edit">
+                  <div className="admin-list-item-actions" style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button 
+                      onClick={() => handleEdit(service)}
+                      style={{
+                        padding: '0.65rem 1.5rem',
+                        background: 'transparent',
+                        border: '2px solid rgba(59, 130, 246, 0.6)',
+                        borderRadius: '8px',
+                        color: '#3b82f6',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
                       Edit
                     </button>
-                    <button onClick={() => handleDelete(service.id)} className="btn-delete">
+                    <button 
+                      onClick={() => handleDelete(service.id)}
+                      style={{
+                        padding: '0.65rem 1.5rem',
+                        background: 'transparent',
+                        border: '2px solid rgba(239, 68, 68, 0.6)',
+                        borderRadius: '8px',
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
                       Delete
                     </button>
                   </div>

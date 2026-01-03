@@ -213,11 +213,12 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem 1rem;
+  padding: 1rem;
 }
 
 .auth-container {
-  width: min(450px, 100%);
+  width: 100%;
+  max-width: 450px;
 }
 
 .auth-form {

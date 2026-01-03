@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, IconButton, InputAdornment, TextField } from '@mui/material';
+import { Box, Button, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 
@@ -50,16 +50,38 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
   };
 
   return (
-    <div className="auth-form">
-      <h2>Create an Account</h2>
+    <Box sx={{ 
+      bgcolor: 'background.paper', 
+      borderRadius: 2, 
+      p: { xs: 3, sm: 4 }, 
+      boxShadow: 3,
+      border: 1,
+      borderColor: 'divider',
+      maxWidth: 450,
+      mx: 'auto',
+    }}>
+      <Typography variant="h5" component="h2" sx={{ mb: 3, fontWeight: 700, textAlign: 'center' }}>
+        Create an Account
+      </Typography>
       <Box component="form" onSubmit={handleSubmit}>
         {(error || validationError) && (
-          <div className="error-message" role="alert">
+          <Box 
+            role="alert"
+            sx={{
+              p: 2,
+              mb: 2,
+              bgcolor: 'error.dark',
+              color: 'error.contrastText',
+              borderRadius: 1,
+              border: 1,
+              borderColor: 'error.main',
+            }}
+          >
             {validationError || error}
-          </div>
+          </Box>
         )}
         
-        <div className="form-group">
+        <Box sx={{ mb: 2 }}>
           <TextField
             id="username"
             label="Username"
@@ -69,11 +91,10 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
             disabled={isLoading}
             required
             fullWidth
-            size="small"
           />
-        </div>
+        </Box>
 
-        <div className="form-group">
+        <Box sx={{ mb: 2 }}>
           <TextField
             id="firstName"
             label="First Name"
@@ -83,11 +104,10 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
             disabled={isLoading}
             required
             fullWidth
-            size="small"
           />
-        </div>
+        </Box>
 
-        <div className="form-group">
+        <Box sx={{ mb: 2 }}>
           <TextField
             id="lastName"
             label="Last Name"
@@ -97,11 +117,10 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
             disabled={isLoading}
             required
             fullWidth
-            size="small"
           />
-        </div>
+        </Box>
 
-        <div className="form-group">
+        <Box sx={{ mb: 2 }}>
           <TextField
             id="password"
             label="Password"
@@ -112,7 +131,6 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
             disabled={isLoading}
             required
             fullWidth
-            size="small"
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -128,9 +146,9 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
               )
             }}
           />
-        </div>
+        </Box>
 
-        <div className="form-group">
+        <Box sx={{ mb: 3 }}>
           <TextField
             id="confirmPassword"
             label="Confirm Password"
@@ -141,7 +159,6 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
             disabled={isLoading}
             required
             fullWidth
-            size="small"
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -157,27 +174,42 @@ export default function RegisterForm({ onRegister, onSwitchToLogin, onSwitchToSp
               )
             }}
           />
-        </div>
+        </Box>
 
-        <Button type="submit" variant="contained" disabled={isLoading} sx={{ mt: 1, width: 'fit-content' }}>
+        <Button 
+          type="submit" 
+          variant="contained" 
+          disabled={isLoading} 
+          fullWidth
+          size="large"
+          sx={{ mb: 2 }}
+        >
           {isLoading ? 'Creating account...' : 'Register'}
         </Button>
 
-        <p className="auth-switch" style={{ marginBottom: '0.5rem' }}>
+        <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary', mb: 1 }}>
           Looking to register as a specialist?{' '}
-          <button type="button" onClick={onSwitchToSpecialist} className="link-button">
+          <Button 
+            variant="text" 
+            onClick={onSwitchToSpecialist}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
             Register here
-          </button>
-        </p>
+          </Button>
+        </Typography>
 
-        <p className="auth-switch">
+        <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary' }}>
           Already have an account?{' '}
-          <button type="button" onClick={onSwitchToLogin} className="link-button">
+          <Button 
+            variant="text" 
+            onClick={onSwitchToLogin}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
             Login here
-          </button>
-        </p>
+          </Button>
+        </Typography>
       </Box>
-    </div>
+    </Box>
   );
 }
 

@@ -15,19 +15,49 @@ import SpecialistCalendar from './components/SpecialistCalendar.jsx';
 import UserProfileManager from './components/UserProfileManager.jsx';
 import { fetchSpecialists } from './services/specialistApi.js';
 import { fetchBookings, createBooking, cancelBooking } from './services/bookingApi.js';
-import { Button, IconButton, Menu, MenuItem, Typography } from '@mui/material';
+import { 
+  AppBar, 
+  Toolbar, 
+  Container, 
+  Box, 
+  Button, 
+  IconButton, 
+  Menu, 
+  MenuItem, 
+  Typography,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Badge,
+  useMediaQuery,
+  useTheme,
+  Chip
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import SearchIcon from '@mui/icons-material/Search';
+import BookmarksIcon from '@mui/icons-material/Bookmarks';
+import BuildIcon from '@mui/icons-material/Build';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
+import GroupIcon from '@mui/icons-material/Group';
 import { useThemeMode } from './contexts/ThemeModeContext.jsx';
 
 function LookBookApp() {
   const { user, logout } = useAuth();
   const { mode, toggleMode } = useThemeMode();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [specialists, setSpecialists] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedSpecialist, setSelectedSpecialist] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [settingsAnchorEl, setSettingsAnchorEl] = useState(null);
   const isSettingsOpen = Boolean(settingsAnchorEl);
@@ -105,184 +135,288 @@ function LookBookApp() {
     }
   };
 
+  const confirmedBookingsCount = bookings.filter(b => b.status === 'Confirmed').length;
+
+  const navItems = [
+    ...(!user.isSpecialist || user.isAdmin ? [{
+      id: 'specialists',
+      label: 'Specialists',
+      icon: <SearchIcon />,
+    }] : []),
+    {
+      id: 'mybookings',
+      label: 'Bookings',
+      icon: <BookmarksIcon />,
+      badge: confirmedBookingsCount > 0 ? confirmedBookingsCount : null,
+    },
+    ...(user.isSpecialist ? [
+      {
+        id: 'my-services',
+        label: 'Services',
+        icon: <BuildIcon />,
+      },
+      {
+        id: 'my-appointments',
+        label: 'Appointments',
+        icon: <CalendarMonthIcon />,
+      },
+    ] : []),
+    ...(user.isAdmin ? [
+      ...(!user.isSpecialist ? [{
+        id: 'admin-specialists',
+        label: 'Specialists',
+        icon: <SupervisorAccountIcon />,
+      }] : []),
+      {
+        id: 'admin-clients',
+        label: 'Clients',
+        icon: <GroupIcon />,
+      },
+    ] : []),
+  ];
+
   return (
-    <div className="app-shell lookbook-app min-h-screen flex flex-col bg-app-bg text-app-text">
-      <header>
-        <div className="header-content">
-          <div className="logo-section">
-            <h1 className="lookbook-title">LookBook</h1>
-          </div>
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-              {user?.username}
-            </Typography>
-
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
+      <AppBar position="sticky" elevation={1} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
+        <Toolbar sx={{ gap: 2 }}>
+          {isMobile && (
             <IconButton
-              aria-label="Settings"
-              onClick={(e) => setSettingsAnchorEl(e.currentTarget)}
-              size="small"
-              sx={{ border: '1px solid', borderColor: 'divider' }}
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              onClick={() => setMobileMenuOpen(true)}
             >
-              <SettingsOutlinedIcon fontSize="small" />
+              <MenuIcon />
             </IconButton>
+          )}
+          
+          <Typography variant="h6" component="h1" sx={{ flexGrow: 1, fontWeight: 700, color: 'text.primary' }}>
+            LookBook
+          </Typography>
 
-            <Menu
-              anchorEl={settingsAnchorEl}
-              open={isSettingsOpen}
-              onClose={() => setSettingsAnchorEl(null)}
-              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>
+            {user?.username}
+          </Typography>
+
+          <IconButton
+            aria-label="Settings"
+            onClick={(e) => setSettingsAnchorEl(e.currentTarget)}
+            size="small"
+            sx={{ border: 1, borderColor: 'divider' }}
+          >
+            <SettingsOutlinedIcon fontSize="small" />
+          </IconButton>
+
+          <Menu
+            anchorEl={settingsAnchorEl}
+            open={isSettingsOpen}
+            onClose={() => setSettingsAnchorEl(null)}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          >
+            <MenuItem
+              onClick={() => {
+                setSettingsAnchorEl(null);
+                setShowProfileModal(true);
+              }}
             >
-              <MenuItem
-                onClick={() => {
-                  setSettingsAnchorEl(null);
-                  setShowProfileModal(true);
-                }}
-              >
-                My profile
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  toggleMode();
-                  setSettingsAnchorEl(null);
-                }}
-              >
-                {mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
-              </MenuItem>
-            </Menu>
+              My profile
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                toggleMode();
+                setSettingsAnchorEl(null);
+              }}
+            >
+              {mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            </MenuItem>
+          </Menu>
 
-            <Button variant="outlined" color="inherit" onClick={logout} sx={{ borderColor: 'divider' }}>
+          <Button 
+            variant="outlined" 
+            onClick={logout} 
+            sx={{ borderColor: 'divider', display: { xs: 'none', sm: 'inline-flex' } }}
+          >
+            Sign out
+          </Button>
+        </Toolbar>
+
+        {/* Desktop Navigation - Tab Style */}
+        {!isMobile && (
+          <Box 
+            className="view-tabs"
+            sx={{ 
+              borderTop: 1, 
+              borderColor: 'divider', 
+              px: 2, 
+              bgcolor: 'background.paper',
+              display: 'flex',
+              gap: 0.5,
+              overflowX: 'auto'
+            }}
+          >
+            {navItems.map((item) => (
+              <Box
+                key={item.id}
+                onClick={() => setCurrentView(item.id)}
+                className={`tab ${currentView === item.id ? 'active' : ''}`}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  py: 1.5,
+                  px: 2,
+                  cursor: 'pointer',
+                  borderBottom: 2,
+                  borderColor: currentView === item.id ? 'primary.main' : 'transparent',
+                  color: currentView === item.id ? 'primary.main' : 'text.secondary',
+                  bgcolor: currentView === item.id ? 'action.selected' : 'transparent',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                    color: currentView === item.id ? 'primary.main' : 'text.primary',
+                  },
+                  minWidth: 'auto',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Box className="tab-icon" sx={{ display: 'flex', alignItems: 'center' }}>
+                  {item.icon}
+                </Box>
+                <Box className="tab-text">
+                  {item.badge ? (
+                    <Badge badgeContent={item.badge} color="primary">
+                      {item.label}
+                    </Badge>
+                  ) : (
+                    item.label
+                  )}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </AppBar>
+
+      {/* Mobile Drawer Navigation */}
+      <Drawer
+        anchor="left"
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      >
+        <Box sx={{ width: 250, pt: 2 }}>
+          <Typography variant="h6" sx={{ px: 2, pb: 2, fontWeight: 700 }}>
+            Menu
+          </Typography>
+          <List>
+            {navItems.map((item) => (
+              <ListItem key={item.id} disablePadding>
+                <ListItemButton
+                  selected={currentView === item.id}
+                  onClick={() => {
+                    setCurrentView(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <ListItemIcon>
+                    {item.badge ? (
+                      <Badge badgeContent={item.badge} color="primary">
+                        {item.icon}
+                      </Badge>
+                    ) : (
+                      item.icon
+                    )}
+                  </ListItemIcon>
+                  <ListItemText primary={item.label} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+          <Box sx={{ px: 2, pt: 2 }}>
+            <Button 
+              variant="outlined" 
+              onClick={() => {
+                logout();
+                setMobileMenuOpen(false);
+              }}
+              fullWidth
+            >
               Sign out
             </Button>
-          </div>
-        </div>
-      </header>
+          </Box>
+        </Box>
+      </Drawer>
 
-      <nav className="view-tabs">
-        {!user.isSpecialist || user.isAdmin ? (
-          <button
-            className={`tab ${currentView === 'specialists' ? 'active' : ''}`}
-            onClick={() => setCurrentView('specialists')}
-          >
-            <span className="tab-icon">🔍</span>
-            <span className="tab-text">Specialists</span>
-          </button>
-        ) : null}
-        <button
-          className={`tab ${currentView === 'mybookings' ? 'active' : ''}`}
-          onClick={() => setCurrentView('mybookings')}
-        >
-          <span className="tab-icon">📋</span>
-          <span className="tab-text">Bookings {bookings.filter(b => b.status === 'Confirmed').length > 0 && `(${bookings.filter(b => b.status === 'Confirmed').length})`}</span>
-        </button>
-        {user.isSpecialist && (
-          <>
-            <button
-              className={`tab ${currentView === 'my-services' ? 'active' : ''}`}
-              onClick={() => setCurrentView('my-services')}
-            >
-              <span className="tab-icon">🛠️</span>
-              <span className="tab-text">Services</span>
-            </button>
-            <button
-              className={`tab ${currentView === 'my-appointments' ? 'active' : ''}`}
-              onClick={() => setCurrentView('my-appointments')}
-            >
-              <span className="tab-icon">📅</span>
-              <span className="tab-text">Appointments</span>
-            </button>
-          </>
-        )}
-        {user.isAdmin && (
-          <>
-            {!user.isSpecialist && (
-              <button
-                className={`tab ${currentView === 'admin-specialists' ? 'active' : ''}`}
-                onClick={() => setCurrentView('admin-specialists')}
-              >
-                <span className="tab-icon">💼</span>
-                <span className="tab-text">Specialists</span>
-              </button>
-            )}
-            <button
-              className={`tab ${currentView === 'admin-clients' ? 'active' : ''}`}
-              onClick={() => setCurrentView('admin-clients')}
-            >
-              <span className="tab-icon">👥</span>
-              <span className="tab-text">Clients</span>
-            </button>
-          </>
-        )}
-      </nav>
-
-      <main className="content">
+      <Container maxWidth="lg" sx={{ flex: 1, py: { xs: 2, md: 3 } }}>
         {error && (
-          <div role="alert" className="error-message">
+          <Box 
+            role="alert" 
+            sx={{ 
+              p: 2, 
+              mb: 2, 
+              bgcolor: 'error.dark', 
+              color: 'error.contrastText', 
+              borderRadius: 1,
+              border: 1,
+              borderColor: 'error.main'
+            }}
+          >
             {error}
-          </div>
+          </Box>
         )}
 
         {currentView === 'specialists' ? (
-          <section className="card">
-            <div className="category-filters">
+          <Box>
+            <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               {categories.map((category) => (
-                <button
+                <Chip
                   key={category}
-                  className={`category-btn ${selectedCategory === category || (category === 'All' && !selectedCategory) ? 'active' : ''}`}
+                  label={category}
                   onClick={() => setSelectedCategory(category === 'All' ? '' : category)}
-                >
-                  {category}
-                </button>
+                  color={selectedCategory === category || (category === 'All' && !selectedCategory) ? 'primary' : 'default'}
+                  variant={selectedCategory === category || (category === 'All' && !selectedCategory) ? 'filled' : 'outlined'}
+                />
               ))}
-            </div>
+            </Box>
 
             <SpecialistList
               specialists={specialists}
               onBook={handleBookSpecialist}
               isLoading={isLoading}
             />
-          </section>
+          </Box>
         ) : currentView === 'mybookings' ? (
-          <section className="card">
-            <h2>My Bookings</h2>
+          <Box>
+            <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
+              My Bookings
+            </Typography>
             <BookingList
               bookings={bookings}
               specialists={specialists}
               onCancel={handleCancelBooking}
             />
-          </section>
+          </Box>
         ) : currentView === 'my-services' ? (
-          <section className="card">
-            <SpecialistServiceManager />
-          </section>
+          <SpecialistServiceManager />
         ) : currentView === 'my-appointments' ? (
-          <section className="card">
-            <SpecialistCalendar />
-          </section>
+          <SpecialistCalendar />
         ) : currentView === 'admin-specialists' ? (
-          <>
-            <section className="card">
-              {user.isSpecialist ? (
-                // If user is a specialist (even if admin), show only their profile
-                <SpecialistProfileManager />
-              ) : (
-                // Only pure admins (not specialists) see all specialists
-                <AdminSpecialistManager />
-              )}
-            </section>
-            {/* Service Management for Specialists Only - shown below Specialist Management */}
-            {user.isSpecialist && (
-              <section className="card" style={{ marginTop: '1.5rem' }}>
-                <SpecialistServiceManager />
-              </section>
+          <Box>
+            {user.isSpecialist ? (
+              <SpecialistProfileManager />
+            ) : (
+              <AdminSpecialistManager />
             )}
-          </>
+            {user.isSpecialist && (
+              <Box sx={{ mt: 3 }}>
+                <SpecialistServiceManager />
+              </Box>
+            )}
+          </Box>
         ) : currentView === 'admin-clients' ? (
-          <section className="card">
-            <AdminClientManager />
-          </section>
+          <AdminClientManager />
         ) : null}
-      </main>
+      </Container>
 
       {showBookingModal && selectedSpecialist && (
         <BookingModal
@@ -312,7 +446,7 @@ function LookBookApp() {
           </div>
         </div>
       )}
-    </div>
+    </Box>
   );
 }
 
